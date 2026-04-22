@@ -1,3 +1,13 @@
+process.stdout.write('[boot] index.ts loaded\n');
+process.on('uncaughtException', (err) => {
+  process.stderr.write(`[boot] uncaughtException: ${err?.stack || err}\n`);
+  process.exit(1);
+});
+process.on('unhandledRejection', (err) => {
+  process.stderr.write(`[boot] unhandledRejection: ${err instanceof Error ? err.stack : String(err)}\n`);
+  process.exit(1);
+});
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
@@ -110,10 +120,14 @@ async function build() {
 }
 
 async function main() {
+  process.stdout.write('[boot] main() starting build\n');
   const app = await build();
+  process.stdout.write(`[boot] build complete, listening on port ${config.port}\n`);
   try {
     await app.listen({ port: config.port, host: '0.0.0.0' });
+    process.stdout.write(`[boot] listen ok on 0.0.0.0:${config.port}\n`);
   } catch (err) {
+    process.stderr.write(`[boot] listen failed: ${err instanceof Error ? err.stack : String(err)}\n`);
     logger.error({ err }, 'failed to start');
     process.exit(1);
   }
@@ -132,4 +146,7 @@ async function main() {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-main();
+main().catch((err) => {
+  process.stderr.write(`[boot] main() threw: ${err instanceof Error ? err.stack : String(err)}\n`);
+  process.exit(1);
+});
