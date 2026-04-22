@@ -1,4 +1,5 @@
 import { request } from 'undici';
+import * as cheerio from 'cheerio';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { query, tx } from '../db.js';
@@ -15,11 +16,36 @@ async function fetchHtml(url: string): Promise<string> {
       'User-Agent': config.scraperUserAgent,
       Accept: 'text/html,application/xhtml+xml',
     },
+    maxRedirections: 5,
   });
   if (res.statusCode >= 300) {
     throw new Error(`HTTP ${res.statusCode} from ${url}`);
   }
   return await res.body.text();
+}
+
+/**
+ * Given an apmcmumbai.org listing page, return the most recent /view-daily-bajarbhav/...
+ * URL whose date is <= today. Returns null if nothing usable is found.
+ */
+function pickLatestDayUrl(listingHtml: string, viewSlug: string, origin: string): { url: string; date: string } | null {
+  const $ = cheerio.load(listingHtml);
+  const candidates: { url: string; date: string }[] = [];
+  const todayIso = new Date().toISOString().slice(0, 10);
+  $('a[href*="/view-daily-bajarbhav/"]').each((_, el) => {
+    const href = $(el).attr('href');
+    if (!href) return;
+    // Expect patterns like /view-daily-bajarbhav/veg/2026-04-22
+    const match = href.match(new RegExp(`/view-daily-bajarbhav/${viewSlug}/(\\d{4}-\\d{2}-\\d{2})`));
+    if (!match) return;
+    const date = match[1];
+    if (date > todayIso) return; // skip future-dated placeholders
+    const url = href.startsWith('http') ? href : `${origin}${href.startsWith('/') ? href : `/${href}`}`;
+    candidates.push({ url, date });
+  });
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return candidates[0];
 }
 
 async function ingestRows(
@@ -60,7 +86,6 @@ function resolveSources(): ScrapeSource[] {
 }
 
 export async function runScrape(): Promise<{ total: number; byMarket: Record<string, number> }> {
-  const today = new Date().toISOString().slice(0, 10);
   const byMarket: Record<string, number> = {};
   let total = 0;
 
@@ -72,17 +97,38 @@ export async function runScrape(): Promise<{ total: number; byMarket: Record<str
   try {
     for (const src of resolveSources()) {
       try {
-        const html = await fetchHtml(src.url);
-        const rows = parsePriceTable(html, src.parser);
-        if (rows.length === 0) {
-          logger.warn({ url: src.url, market: src.market }, 'parser returned 0 rows');
+        const listingHtml = await fetchHtml(src.listingUrl);
+        const picked = pickLatestDayUrl(listingHtml, src.viewSlug, src.origin);
+        if (!picked) {
+          logger.warn(
+            { listingUrl: src.listingUrl, market: src.market, category: src.category },
+            'no daily-view link found on listing',
+          );
+          continue;
         }
-        const n = await ingestRows(src.market, src.category, rows, today);
+        const dayHtml = await fetchHtml(picked.url);
+        const rows = parsePriceTable(dayHtml, src.parser);
+        if (rows.length === 0) {
+          logger.warn(
+            { url: picked.url, market: src.market, category: src.category },
+            'parser returned 0 rows',
+          );
+        }
+        const n = await ingestRows(src.market, src.category, rows, picked.date);
         byMarket[src.market] = (byMarket[src.market] ?? 0) + n;
         total += n;
-        logger.info({ market: src.market, category: src.category, rows: rows.length, ingested: n }, 'scrape ok');
+        logger.info(
+          {
+            market: src.market,
+            category: src.category,
+            date: picked.date,
+            rows: rows.length,
+            ingested: n,
+          },
+          'scrape ok',
+        );
       } catch (err) {
-        logger.error({ err, url: src.url, market: src.market }, 'scrape source failed');
+        logger.error({ err, market: src.market, category: src.category }, 'scrape source failed');
       }
     }
 

@@ -66,13 +66,13 @@ async function seedCommodities() {
 
 async function initialScrapeIfEmpty() {
   try {
-    const res = await pool.query('SELECT COUNT(*)::int AS n FROM prices');
+    const res = await pool.query('SELECT COUNT(*)::int AS n FROM price_snapshots');
     const n = res.rows[0]?.n ?? 0;
     if (n > 0) {
-      process.stdout.write(`[boot] prices table has ${n} rows, skipping initial scrape\n`);
+      process.stdout.write(`[boot] price_snapshots has ${n} rows, skipping initial scrape\n`);
       return;
     }
-    process.stdout.write('[boot] prices table empty, kicking off initial scrape (non-blocking)\n');
+    process.stdout.write('[boot] price_snapshots empty, kicking off initial scrape (non-blocking)\n');
     const { runScrape } = await import('../src/scraper/index.js');
     runScrape()
       .then((r) => process.stdout.write(`[boot] initial scrape done: ${JSON.stringify(r)}\n`))

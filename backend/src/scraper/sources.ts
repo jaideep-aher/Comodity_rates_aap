@@ -4,25 +4,51 @@ export type MarketSlug = 'apmc_mumbai' | 'apmc_pune' | 'apmc_nashik' | 'apmc_sol
 
 export type ScrapeSource = {
   market: MarketSlug;
-  url: string;
   category: Category;
   parser: 'apmc_mumbai_table' | 'apmc_generic_table';
+  /**
+   * Listing URL — a page that enumerates recent daily-bajarbhav dates with links
+   * like /view-daily-bajarbhav/{cat}/YYYY-MM-DD. The scraper walks this list
+   * and fetches the most recent day it hasn't already ingested.
+   */
+  listingUrl: string;
+  /** Slug used in the daily-view URL (e.g. /view-daily-bajarbhav/veg/YYYY-MM-DD). */
+  viewSlug: string;
+  /** Base origin used to resolve relative links when present. */
+  origin: string;
 };
 
 export const SOURCES: ScrapeSource[] = [
-  { market: 'apmc_mumbai', url: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/veg',    category: 'veg',    parser: 'apmc_mumbai_table' },
-  { market: 'apmc_mumbai', url: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/fruit',  category: 'fruit',  parser: 'apmc_mumbai_table' },
-  { market: 'apmc_mumbai', url: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/dhanya', category: 'grain',  parser: 'apmc_mumbai_table' },
-  { market: 'apmc_mumbai', url: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/turbhe', category: 'turbhe', parser: 'apmc_mumbai_table' },
-
-  // Pune / Nashik / Solapur scaffolding. URLs are placeholders — replace with
-  // the real daily-rates pages when enabling these markets. Parser is a
-  // generic "table with आवक / किमान / कमाल / सरासरी columns" variant.
-  { market: 'apmc_pune',    url: 'https://puneapmc.org/daily-rates/veg',    category: 'veg',   parser: 'apmc_generic_table' },
-  { market: 'apmc_pune',    url: 'https://puneapmc.org/daily-rates/fruit',  category: 'fruit', parser: 'apmc_generic_table' },
-  { market: 'apmc_pune',    url: 'https://puneapmc.org/daily-rates/dhanya', category: 'grain', parser: 'apmc_generic_table' },
-  { market: 'apmc_nashik',  url: 'https://nashikapmc.org/daily-rates/veg',  category: 'veg',   parser: 'apmc_generic_table' },
-  { market: 'apmc_nashik',  url: 'https://nashikapmc.org/daily-rates/fruit',category: 'fruit', parser: 'apmc_generic_table' },
-  { market: 'apmc_solapur', url: 'https://solapuragricultureapmc.com/daily/veg',   category: 'veg',   parser: 'apmc_generic_table' },
-  { market: 'apmc_solapur', url: 'https://solapuragricultureapmc.com/daily/fruit', category: 'fruit', parser: 'apmc_generic_table' },
+  {
+    market: 'apmc_mumbai',
+    category: 'veg',
+    parser: 'apmc_mumbai_table',
+    listingUrl: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/veg',
+    viewSlug: 'veg',
+    origin: 'https://apmcmumbai.org',
+  },
+  {
+    market: 'apmc_mumbai',
+    category: 'fruit',
+    parser: 'apmc_mumbai_table',
+    listingUrl: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/fruit',
+    viewSlug: 'fruit',
+    origin: 'https://apmcmumbai.org',
+  },
+  {
+    market: 'apmc_mumbai',
+    category: 'grain',
+    parser: 'apmc_mumbai_table',
+    listingUrl: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/dhanya',
+    viewSlug: 'dhanya',
+    origin: 'https://apmcmumbai.org',
+  },
+  {
+    market: 'apmc_mumbai',
+    category: 'turbhe',
+    parser: 'apmc_mumbai_table',
+    listingUrl: 'https://apmcmumbai.org/bajarbhav/daily-bajarbhav-dates/turbhe',
+    viewSlug: 'turbhe',
+    origin: 'https://apmcmumbai.org',
+  },
 ];
