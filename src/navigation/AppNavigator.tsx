@@ -186,7 +186,10 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        key={`${onboardingDone}-${needsAuth}`}
+        screenOptions={{ headerShown: false }}
+      >
         {!onboardingDone ? (
           <>
             <Stack.Screen name="OnboardingLang">

@@ -65,31 +65,34 @@ export function OnboardingCropsScreen({ onDone }: Props) {
 
       <CategoryTabs value={cat} onChange={setCat} />
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(x) => String(x.id)}
-        numColumns={3}
-        contentContainerStyle={styles.grid}
-        columnWrapperStyle={{ gap: spacing.sm }}
-        renderItem={({ item }) => {
-          const picked = ids.includes(item.id);
-          return (
-            <Pressable
-              onPress={() => toggle(item.id)}
-              style={[styles.tile, picked && styles.tileActive]}
-            >
-              <Text style={styles.tileEmoji}>{emojiFor(item.iconKey)}</Text>
-              <Text
-                style={[styles.tileName, picked && styles.tileNameActive]}
-                numberOfLines={2}
+      <View style={styles.listWrap}>
+        <FlatList
+          data={filtered}
+          keyExtractor={(x) => String(x.id)}
+          numColumns={3}
+          contentContainerStyle={styles.grid}
+          columnWrapperStyle={{ gap: spacing.sm }}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => {
+            const picked = ids.includes(item.id);
+            return (
+              <Pressable
+                onPress={() => toggle(item.id)}
+                style={[styles.tile, picked && styles.tileActive]}
               >
-                {item.name[lang]}
-              </Text>
-              {picked && <Text style={styles.check}>✓</Text>}
-            </Pressable>
-          );
-        }}
-      />
+                <Text style={styles.tileEmoji}>{emojiFor(item.iconKey)}</Text>
+                <Text
+                  style={[styles.tileName, picked && styles.tileNameActive]}
+                  numberOfLines={2}
+                >
+                  {item.name[lang]}
+                </Text>
+                {picked && <Text style={styles.check}>✓</Text>}
+              </Pressable>
+            );
+          }}
+        />
+      </View>
 
       <View style={styles.footer}>
         <Pressable onPress={finish}>
@@ -109,6 +112,7 @@ export function OnboardingCropsScreen({ onDone }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg },
+  listWrap: { flex: 1, zIndex: 0 },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   title: { fontSize: font.xxl, fontWeight: '800', color: colors.text },
   sub: { fontSize: font.sm, color: colors.textMuted, marginTop: 4 },
@@ -154,6 +158,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 10,
+    elevation: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
