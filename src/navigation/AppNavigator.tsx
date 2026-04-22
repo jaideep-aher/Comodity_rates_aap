@@ -1,0 +1,356 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { colors, font } from '../theme';
+import { useSettings, useDict } from '../store/settingsStore';
+import { OnboardingLangScreen } from '../screens/OnboardingLangScreen';
+import { OnboardingCropsScreen } from '../screens/OnboardingCropsScreen';
+import { OnboardingPhoneScreen } from '../screens/OnboardingPhoneScreen';
+import { OnboardingOtpScreen } from '../screens/OnboardingOtpScreen';
+import { HomeScreen } from '../screens/HomeScreen';
+import { BrowseScreen } from '../screens/BrowseScreen';
+import { AlertsScreen } from '../screens/AlertsScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { CommodityDetailScreen } from '../screens/CommodityDetailScreen';
+import { MarketplaceScreen } from '../screens/MarketplaceScreen';
+import { ListingDetailScreen } from '../screens/ListingDetailScreen';
+import { CreateListingScreen } from '../screens/CreateListingScreen';
+import { CreateTransportScreen } from '../screens/CreateTransportScreen';
+import { PremiumScreen } from '../screens/PremiumScreen';
+import { LearnScreen } from '../screens/LearnScreen';
+import { NewsScreen } from '../screens/NewsScreen';
+import { SchemesScreen } from '../screens/SchemesScreen';
+import { HelplineScreen } from '../screens/HelplineScreen';
+import { VideosScreen } from '../screens/VideosScreen';
+import { CropDoctorScreen } from '../screens/CropDoctorScreen';
+import { AskAdvisorScreen } from '../screens/AskAdvisorScreen';
+import { FarmDiaryScreen } from '../screens/FarmDiaryScreen';
+import { TabIcon } from '../components/illustrations/TabIcon';
+import { IS_REAL } from '../api/config';
+import { useAuth } from '../auth/authStore';
+import { useNotificationsRegistration } from '../hooks/useNotifications';
+import { useDailyAdvisoryNotifications } from '../hooks/useDailyAdvisoryNotifications';
+
+type RootStackParamList = {
+  OnboardingLang: undefined;
+  OnboardingPhone: undefined;
+  OnboardingOtp: { phone: string; devCode?: string };
+  OnboardingCrops: undefined;
+  Tabs: undefined;
+  Detail: { slug: string };
+  ListingDetail: { id: string };
+  CreateListing: undefined;
+  CreateTransport: undefined;
+  Premium: undefined;
+  News: undefined;
+  Schemes: undefined;
+  Helpline: undefined;
+  Videos: undefined;
+  CropDoctor: undefined;
+  AskAdvisor: undefined;
+  FarmDiary: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator();
+
+type TabNav = {
+  onOpenDetail: (slug: string) => void;
+  onEditCrops: () => void;
+  onOpenListing: (id: string) => void;
+  onCreateListing: () => void;
+  onCreateTransport: () => void;
+  onOpenPremium: () => void;
+  onOpenNews: () => void;
+  onOpenSchemes: () => void;
+  onOpenHelpline: () => void;
+  onOpenVideos: () => void;
+  onOpenCropDoctor: () => void;
+  onOpenMarkets: () => void;
+  onOpenAskAdvisor: () => void;
+  onOpenFarmDiary: () => void;
+};
+
+function Tabs(nav: TabNav) {
+  const t = useDict();
+  useNotificationsRegistration();
+  useDailyAdvisoryNotifications();
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontSize: font.xs, fontWeight: '600' },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          paddingTop: 6,
+          paddingBottom: 6,
+          height: 64,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        options={{
+          title: t.tabHome,
+          tabBarIcon: ({ focused }) => <TabIcon kind="home" focused={focused} />,
+        }}
+      >
+        {() => (
+          <HomeScreen
+            onOpenDetail={nav.onOpenDetail}
+            onAddCrops={nav.onEditCrops}
+            onOpenNews={nav.onOpenNews}
+            onOpenSchemes={nav.onOpenSchemes}
+            onOpenHelpline={nav.onOpenHelpline}
+            onOpenVideos={nav.onOpenVideos}
+            onOpenCropDoctor={nav.onOpenCropDoctor}
+            onOpenMarkets={nav.onOpenMarkets}
+            onOpenAskAdvisor={nav.onOpenAskAdvisor}
+            onOpenFarmDiary={nav.onOpenFarmDiary}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Markets"
+        options={{
+          title: t.tabMarkets,
+          tabBarIcon: ({ focused }) => <TabIcon kind="markets" focused={focused} />,
+        }}
+      >
+        {() => <BrowseScreen onOpenDetail={nav.onOpenDetail} />}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Trade"
+        options={{
+          title: t.tabTrade,
+          tabBarIcon: ({ focused }) => <TabIcon kind="trade" focused={focused} />,
+        }}
+      >
+        {() => (
+          <MarketplaceScreen
+            onOpenListing={nav.onOpenListing}
+            onCreateListing={nav.onCreateListing}
+            onCreateTransportRequest={nav.onCreateTransport}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Learn"
+        options={{
+          title: t.tabLearn,
+          tabBarIcon: ({ focused }) => <TabIcon kind="learn" focused={focused} />,
+        }}
+      >
+        {() => (
+          <LearnScreen
+            onOpenNews={nav.onOpenNews}
+            onOpenSchemes={nav.onOpenSchemes}
+            onOpenHelpline={nav.onOpenHelpline}
+            onOpenVideos={nav.onOpenVideos}
+            onOpenCropDoctor={nav.onOpenCropDoctor}
+            onOpenMarkets={nav.onOpenMarkets}
+            onOpenDetail={nav.onOpenDetail}
+            onOpenAskAdvisor={nav.onOpenAskAdvisor}
+            onOpenFarmDiary={nav.onOpenFarmDiary}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Profile"
+        options={{
+          title: t.tabProfile,
+          tabBarIcon: ({ focused }) => <TabIcon kind="profile" focused={focused} />,
+        }}
+      >
+        {() => (
+          <ProfileScreen
+            onEditCrops={nav.onEditCrops}
+            onOpenPremium={nav.onOpenPremium}
+            onOpenFarmDiary={nav.onOpenFarmDiary}
+          />
+        )}
+      </Tab.Screen>
+    </Tab.Navigator>
+  );
+}
+
+export function AppNavigator() {
+  const onboardingDone = useSettings((s) => s.onboardingDone);
+  const isAuthed = useAuth((s) => s.isAuthenticated);
+
+  const needsAuth = IS_REAL && !isAuthed;
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!onboardingDone ? (
+          <>
+            <Stack.Screen name="OnboardingLang">
+              {({ navigation }) => (
+                <OnboardingLangScreen
+                  onNext={() =>
+                    navigation.navigate(IS_REAL ? 'OnboardingPhone' : 'OnboardingCrops')
+                  }
+                />
+              )}
+            </Stack.Screen>
+            {IS_REAL && (
+              <>
+                <Stack.Screen name="OnboardingPhone">
+                  {({ navigation }) => (
+                    <OnboardingPhoneScreen
+                      onCodeSent={(phone, devCode) =>
+                        navigation.navigate('OnboardingOtp', { phone, devCode })
+                      }
+                    />
+                  )}
+                </Stack.Screen>
+                <Stack.Screen name="OnboardingOtp">
+                  {({ route, navigation }) => (
+                    <OnboardingOtpScreen
+                      phone={route.params.phone}
+                      devCode={route.params.devCode}
+                      onBack={() => navigation.goBack()}
+                      onVerified={() => navigation.navigate('OnboardingCrops')}
+                    />
+                  )}
+                </Stack.Screen>
+              </>
+            )}
+            <Stack.Screen name="OnboardingCrops">
+              {({ navigation }) => (
+                <OnboardingCropsScreen
+                  onDone={() => {
+                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+                  }}
+                />
+              )}
+            </Stack.Screen>
+          </>
+        ) : needsAuth ? (
+          <>
+            <Stack.Screen name="OnboardingPhone">
+              {({ navigation }) => (
+                <OnboardingPhoneScreen
+                  onCodeSent={(phone, devCode) =>
+                    navigation.navigate('OnboardingOtp', { phone, devCode })
+                  }
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="OnboardingOtp">
+              {({ route, navigation }) => (
+                <OnboardingOtpScreen
+                  phone={route.params.phone}
+                  devCode={route.params.devCode}
+                  onBack={() => navigation.goBack()}
+                  onVerified={() => {
+                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+                  }}
+                />
+              )}
+            </Stack.Screen>
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Tabs">
+              {({ navigation }) => (
+                <Tabs
+                  onOpenDetail={(slug) => navigation.navigate('Detail', { slug })}
+                  onEditCrops={() => navigation.navigate('OnboardingCrops')}
+                  onOpenListing={(id) => navigation.navigate('ListingDetail', { id })}
+                  onCreateListing={() => navigation.navigate('CreateListing')}
+                  onCreateTransport={() => navigation.navigate('CreateTransport')}
+                  onOpenPremium={() => navigation.navigate('Premium')}
+                  onOpenNews={() => navigation.navigate('News')}
+                  onOpenSchemes={() => navigation.navigate('Schemes')}
+                  onOpenHelpline={() => navigation.navigate('Helpline')}
+                  onOpenVideos={() => navigation.navigate('Videos')}
+                  onOpenCropDoctor={() => navigation.navigate('CropDoctor')}
+                  onOpenMarkets={() =>
+                    navigation.navigate('Tabs' as never, { screen: 'Markets' } as never)
+                  }
+                  onOpenAskAdvisor={() => navigation.navigate('AskAdvisor')}
+                  onOpenFarmDiary={() => navigation.navigate('FarmDiary')}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Detail">
+              {({ route, navigation }) => (
+                <CommodityDetailScreen
+                  slug={route.params.slug}
+                  onBack={() => navigation.goBack()}
+                  onOpenPremium={() => navigation.navigate('Premium')}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ListingDetail">
+              {({ route, navigation }) => (
+                <ListingDetailScreen
+                  listingId={route.params.id}
+                  onBack={() => navigation.goBack()}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="CreateListing" options={{ presentation: 'modal' }}>
+              {({ navigation }) => (
+                <CreateListingScreen
+                  onDone={() => navigation.goBack()}
+                  onCancel={() => navigation.goBack()}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="CreateTransport" options={{ presentation: 'modal' }}>
+              {({ navigation }) => (
+                <CreateTransportScreen
+                  onDone={() => navigation.goBack()}
+                  onCancel={() => navigation.goBack()}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Premium" options={{ presentation: 'modal' }}>
+              {({ navigation }) => <PremiumScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="News" options={{ presentation: 'card' }}>
+              {({ navigation }) => <NewsScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="Schemes" options={{ presentation: 'card' }}>
+              {({ navigation }) => <SchemesScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="Helpline" options={{ presentation: 'card' }}>
+              {({ navigation }) => <HelplineScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="Videos" options={{ presentation: 'card' }}>
+              {({ navigation }) => <VideosScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="CropDoctor" options={{ presentation: 'card' }}>
+              {({ navigation }) => <CropDoctorScreen onBack={() => navigation.goBack()} />}
+            </Stack.Screen>
+            <Stack.Screen name="AskAdvisor" options={{ presentation: 'card' }}>
+              {({ navigation }) => (
+                <AskAdvisorScreen onBack={() => navigation.goBack()} />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="FarmDiary" options={{ presentation: 'card' }}>
+              {({ navigation }) => (
+                <FarmDiaryScreen onBack={() => navigation.goBack()} />
+              )}
+            </Stack.Screen>
+            <Stack.Screen
+              name="OnboardingCrops"
+              options={{ presentation: 'modal' }}
+            >
+              {({ navigation }) => (
+                <OnboardingCropsScreen onDone={() => navigation.goBack()} />
+              )}
+            </Stack.Screen>
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}

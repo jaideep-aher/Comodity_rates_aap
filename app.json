@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "BajarBhav",
+    "slug": "bajarbhav",
+    "version": "0.6.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B6E4F"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.bajarbhav.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B6E4F"
+      },
+      "package": "com.bajarbhav.app",
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#0B6E4F"
+        }
+      ]
+    ],
+    "extra": {
+      "apiMode": "mock",
+      "apiUrl": "http://localhost:4000",
+      "sentryDsn": "",
+      "posthogApiKey": "",
+      "posthogHost": "https://app.posthog.com",
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    },
+    "runtimeVersion": { "policy": "sdkVersion" },
+    "updates": {
+      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
+    }
+  }
+}

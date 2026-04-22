@@ -1,0 +1,61 @@
+# Production docker-compose. Put secrets in .env (same folder, NOT committed).
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+# Behind TLS via Caddy / Nginx reverse-proxy in front of this compose stack.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bajarbhav}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-bajarbhav}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', '${POSTGRES_USER:-bajarbhav}']
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://${POSTGRES_USER:-bajarbhav}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bajarbhav}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
+      MSG91_SENDER_ID: ${MSG91_SENDER_ID:-BAJARB}
+      MSG91_TEMPLATE_ID: ${MSG91_TEMPLATE_ID:-}
+      MSG91_DIGEST_TEMPLATE_ID: ${MSG91_DIGEST_TEMPLATE_ID:-}
+      FCM_SERVICE_ACCOUNT_JSON: ${FCM_SERVICE_ACCOUNT_JSON:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
+      SCRAPER_ENABLED: ${SCRAPER_ENABLED:-true}
+      SCRAPER_MARKETS: ${SCRAPER_MARKETS:-apmc_mumbai}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+      DATA_SOURCE: apmcmumbai.org
+    ports:
+      - '127.0.0.1:4000:4000'
+    command: sh -c "node dist/scripts/migrate.js && node dist/src/index.js"
+
+volumes:
+  postgres_data:
+  redis_data:
