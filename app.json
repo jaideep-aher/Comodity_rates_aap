@@ -2,7 +2,7 @@
   "expo": {
     "name": "BajarBhav",
     "slug": "bajarbhav",
-    "version": "0.6.1",
+    "version": "0.7.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -35,8 +35,8 @@
       ]
     ],
     "extra": {
-      "apiMode": "mock",
-      "apiUrl": "http://localhost:4000",
+      "apiMode": "real",
+      "apiUrl": "https://api.aher.dev",
       "sentryDsn": "",
       "posthogApiKey": "",
       "posthogHost": "https://app.posthog.com",

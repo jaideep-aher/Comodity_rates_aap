@@ -45,15 +45,60 @@ async function migrate() {
   process.stdout.write('[boot] all migrations complete\n');
 }
 
+async function seedCommodities() {
+  const { COMMODITIES } = await import('../src/data/commodities.js');
+  process.stdout.write(`[boot] seeding ${COMMODITIES.length} commodities...\n`);
+  for (const c of COMMODITIES) {
+    await pool.query(
+      `INSERT INTO commodities (slug, name_mr, name_en, category, icon_key)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (slug) DO UPDATE SET
+          name_mr = EXCLUDED.name_mr,
+          name_en = EXCLUDED.name_en,
+          category = EXCLUDED.category,
+          icon_key = EXCLUDED.icon_key,
+          updated_at = NOW()`,
+      [c.slug, c.name_mr, c.name_en, c.category, c.icon_key],
+    );
+  }
+  process.stdout.write('[boot] commodities seeded\n');
+}
+
+async function initialScrapeIfEmpty() {
+  try {
+    const res = await pool.query('SELECT COUNT(*)::int AS n FROM prices');
+    const n = res.rows[0]?.n ?? 0;
+    if (n > 0) {
+      process.stdout.write(`[boot] prices table has ${n} rows, skipping initial scrape\n`);
+      return;
+    }
+    process.stdout.write('[boot] prices table empty, kicking off initial scrape (non-blocking)\n');
+    const { runScrape } = await import('../src/scraper/index.js');
+    runScrape()
+      .then((r) => process.stdout.write(`[boot] initial scrape done: ${JSON.stringify(r)}\n`))
+      .catch((err) =>
+        process.stderr.write(
+          `[boot] initial scrape failed: ${err instanceof Error ? err.stack : String(err)}\n`,
+        ),
+      );
+  } catch (err) {
+    process.stderr.write(
+      `[boot] initialScrapeIfEmpty error: ${err instanceof Error ? err.stack : String(err)}\n`,
+    );
+  }
+}
+
 async function main() {
   try {
     await migrate();
+    await seedCommodities();
   } catch (err) {
-    process.stderr.write(`[boot] migrate error: ${err instanceof Error ? err.stack : String(err)}\n`);
+    process.stderr.write(`[boot] migrate/seed error: ${err instanceof Error ? err.stack : String(err)}\n`);
     process.exit(1);
   }
   process.stdout.write('[boot] starting server...\n');
   await import('../src/index.js');
+  await initialScrapeIfEmpty();
 }
 
 main().catch((err) => {
