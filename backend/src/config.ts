@@ -24,6 +24,8 @@ export const config = {
   jwtExpiresIn: env('JWT_EXPIRES_IN', '90d'),
 
   devOtpAny: env('DEV_OTP_ANY', 'true') === 'true',
+  /** When false, SMS OTP is skipped and /auth/otp/verify only checks the phone (Railway toggle). */
+  otpVerificationEnabled: env('OTP_VERIFICATION_ENABLED', 'true') === 'true',
   msg91AuthKey: optional('MSG91_AUTH_KEY'),
   msg91TemplateId: optional('MSG91_TEMPLATE_ID'),
   msg91SenderId: env('MSG91_SENDER_ID', 'BAJARB'),
@@ -70,6 +72,8 @@ export const config = {
 
   /** If set (e.g. `0.8.0`), mobile apps below this version must update before use. */
   minAppVersion: optional('MIN_APP_VERSION'),
+  /** If set (e.g. `0.9.5`), mobile apps above this version are blocked (bad release / channel cap). */
+  maxAppVersion: optional('MAX_APP_VERSION'),
   /** Override Play Store / App Store links shown in the force-update screen. */
   androidStoreUrl: optional('ANDROID_STORE_URL'),
   iosStoreUrl: optional('IOS_STORE_URL'),

@@ -12,6 +12,11 @@ export function isVersionOlderThan(a: string, b: string): boolean {
   return false;
 }
 
+/** True if `a` is strictly newer than `b` (dotted semver-style). */
+export function isVersionNewerThan(a: string, b: string): boolean {
+  return isVersionOlderThan(b, a);
+}
+
 function parseVersion(v: string): [number, number, number] {
   const m = v.trim().match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
   if (!m) return [0, 0, 0];

@@ -2,6 +2,8 @@ import { API_URL } from './config';
 
 export type ClientConfigResponse = {
   minAppVersion: string | null;
+  maxAppVersion: string | null;
+  otpVerificationEnabled: boolean;
   androidStoreUrl: string | null;
   iosStoreUrl: string | null;
 };
@@ -14,5 +16,12 @@ export async function fetchClientConfig(signal?: AbortSignal): Promise<ClientCon
   if (!res.ok) {
     throw new Error(`client-config ${res.status}`);
   }
-  return (await res.json()) as ClientConfigResponse;
+  const data = (await res.json()) as Partial<ClientConfigResponse>;
+  return {
+    minAppVersion: data.minAppVersion ?? null,
+    maxAppVersion: data.maxAppVersion ?? null,
+    otpVerificationEnabled: data.otpVerificationEnabled !== false,
+    androidStoreUrl: data.androidStoreUrl ?? null,
+    iosStoreUrl: data.iosStoreUrl ?? null,
+  };
 }

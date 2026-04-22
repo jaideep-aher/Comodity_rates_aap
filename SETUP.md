@@ -268,8 +268,8 @@ advisories) but the server can't send price alerts.
 ### 4.2 Register the Android app
 
 1. Project Overview → **Add app → Android**.
-2. Package name: `com.bajarbhav.app`  *(must match `app.json`
-   `android.package`)*.
+2. Package name: `com.agro.agrofix`  *(must match `app.json`
+   `android.package` and your Play Console app)*.
 3. App nickname: `BajarBhav`.
 4. Download `google-services.json`.
 5. Place it at **`new rate app/android/app/google-services.json`**.
@@ -338,7 +338,11 @@ DATA_SOURCE=apmcmumbai.org
 OTP login:
 
 ```dotenv
-DEV_OTP_ANY=false                         # prod: require real SMS
+# Railway toggle: false = phone-only sign-in (no SMS, no OTP screen; one POST /auth/otp/verify).
+# Default true. Keep true in production unless you accept the weaker trust model.
+OTP_VERIFICATION_ENABLED=true
+
+DEV_OTP_ANY=false                         # dev: any 4+ digit code; prod: require real SMS match
 MSG91_AUTH_KEY=xxx
 MSG91_TEMPLATE_ID=xxx
 MSG91_SENDER_ID=BAJARB
@@ -386,6 +390,32 @@ SENTRY_DSN=https://xxx@sentry.io/yyy
 POSTHOG_API_KEY=phc_xxx
 POSTHOG_HOST=https://app.posthog.com
 ```
+
+Mobile **force-update** (optional — real API mode only; see `GET /api/client-config`):
+
+```dotenv
+# Block app versions older than this (e.g. after a breaking API change).
+MIN_APP_VERSION=0.8.0
+
+# Block app versions newer than this (e.g. pulled a bad release; rarely needed).
+MAX_APP_VERSION=
+
+ANDROID_STORE_URL=https://play.google.com/store/apps/details?id=com.agro.agrofix
+IOS_STORE_URL=
+```
+
+The same endpoint returns **`otpVerificationEnabled`** (mirrors `OTP_VERIFICATION_ENABLED`) so the app can skip the OTP screen when the server has verification turned off.
+
+### 5.1 Firebase Crashlytics + product analytics (app)
+
+The app uses **Firebase only for Crashlytics** (crashes and `recordError`). **Screens, taps, and custom events** go to **PostHog** when `posthogApiKey` is set in `app.json` `extra` — not to Firebase Analytics.
+
+After `npx expo prebuild` / EAS Build, native projects pick up:
+
+- Root **`google-services.json`** (Android) — from Firebase Console → Your apps → Android `com.agro.agrofix`.
+- Root **`GoogleService-Info.plist`** (iOS) — for iOS builds.
+
+Enable **Crashlytics** in the Firebase console. **Sentry** (`sentryDsn`) is optional in addition to Crashlytics for errors.
 
 ---
 
@@ -438,11 +468,57 @@ Cost: ~$0.15 per 1M input tokens, ~$0.60 per 1M output tokens on
 5. The app renders the paywall automatically when
    `config.extra.paymentsEnabled` is true.
 
-### 7.3 Sentry & PostHog
+### 7.3 PostHog & Sentry (free tiers)
 
-Create accounts, copy the DSN / API key, paste into both backend env
-and `app.json.extra`. The client already wraps `App.tsx` in a Sentry
-error boundary and initialises PostHog on first launch.
+Both have **free cloud tiers** (limits reset monthly on PostHog; Sentry’s
+developer/free tier is enough to try). You only **pay if you exceed**
+those limits or upgrade.
+
+#### PostHog (product analytics — screens & `track()` events)
+
+1. Go to [https://posthog.com](https://posthog.com) → **Get started — free**.
+2. Create an organization and a **project** (e.g. `BajarBhav`).
+3. Open **Project settings** → **Project API Key** — copy the key
+   (starts with `phc_`).
+4. Note your **region**:
+   - US cloud → host `https://us.i.posthog.com` **or** legacy `https://app.posthog.com`
+   - EU cloud → host `https://eu.i.posthog.com`  
+   Use the host shown in PostHog’s “API” or “Project settings” for your project.
+5. In **`app.json`** → `expo.extra`:
+   ```jsonc
+   "posthogApiKey": "phc_xxxxxxxx",
+   "posthogHost": "https://us.i.posthog.com"
+   ```
+   (Replace `posthogHost` with the exact base URL PostHog shows for your project.)
+6. Rebuild the app (keys are baked in at build time via `expo-constants`).
+7. Optional **backend** (server-side events): set `POSTHOG_API_KEY` and
+   `POSTHOG_HOST` in Railway to the **same** project (see §5 Observability).
+
+**Free tier (check [posthog.com/pricing](https://posthog.com/pricing)):**  
+typically includes a large monthly **event** allowance (e.g. ~1M product
+analytics events) without a credit card; session replay and other products
+have separate monthly caps.
+
+#### Sentry (error monitoring, alongside Firebase Crashlytics)
+
+1. Go to [https://sentry.io](https://sentry.io) → sign up (free **Developer** plan).
+2. **Create project** → platform **React Native** (matches `sentry-expo` in this app).
+3. Copy the **DSN** (looks like `https://xxxx@xxxx.ingest.sentry.io/xxxx`).
+4. In **`app.json`** → `expo.extra`:
+   ```jsonc
+   "sentryDsn": "https://....@....ingest.sentry.io/...."
+   ```
+5. Rebuild the app. Errors sent via `captureException()` in code will
+   show in Sentry; **Crashlytics** still handles native Firebase crash
+   reporting if configured.
+
+**Free tier:** Sentry’s free developer tier includes a **limited event
+volume per month** and retention; see [sentry.io/pricing](https://sentry.io/pricing).
+If you only need crashes, **Firebase Crashlytics** alone may be enough;
+Sentry adds richer grouping, releases, and JS stack traces in one place.
+
+**Backend (optional):** for API errors, set `SENTRY_DSN` in Railway
+(see §5) to a **Node/Fastify** (or separate) Sentry project DSN.
 
 ---
 
@@ -495,7 +571,7 @@ play-store-icon.png`.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `adb: INSTALL_FAILED_INSUFFICIENT_STORAGE` | Phone /data full | `adb uninstall com.bajarbhav.app` then install release APK (~45 MB). |
+| `adb: INSTALL_FAILED_INSUFFICIENT_STORAGE` | Phone /data full | `adb uninstall com.agro.agrofix` then install release APK (~45 MB). |
 | `Java heap space` during gradle build | Default 2 GB heap | `GRADLE_OPTS="-Xmx6g"` prefix. |
 | `Plugin 'expo-module-gradle-plugin' not found` | `expo-application` version mismatch | `npm install` — the `overrides` in package.json pins it to 5.9.1. |
 | `No space left on device` during build | `~/.gradle/caches` ballooning | `rm -rf ~/.gradle/caches ~/.gradle/daemon`. |

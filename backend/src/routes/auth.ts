@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requestOtp, verifyOtp } from '../auth.js';
+import { config } from '../config.js';
 import { query } from '../db.js';
 
 export async function authRoutes(app: FastifyInstance) {
@@ -16,15 +17,30 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post('/auth/otp/verify', async (req, reply) => {
-    const body = z
-      .object({
-        phone: z.string().min(6),
-        code: z.string().min(4).max(8),
-      })
-      .parse(req.body);
+    let phone: string;
+    let code: string;
+    if (config.otpVerificationEnabled) {
+      const b = z
+        .object({
+          phone: z.string().min(6),
+          code: z.string().min(4).max(8),
+        })
+        .parse(req.body);
+      phone = b.phone;
+      code = b.code;
+    } else {
+      const b = z
+        .object({
+          phone: z.string().min(6),
+          code: z.string().max(8).optional(),
+        })
+        .parse(req.body);
+      phone = b.phone;
+      code = b.code ?? '';
+    }
 
     try {
-      const { user, isNew } = await verifyOtp(body.phone, body.code);
+      const { user, isNew } = await verifyOtp(phone, code);
       const token = await reply.jwtSign({ sub: user.id }, { expiresIn: '90d' });
       return { token, user, isNew };
     } catch (err) {

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { randomInt } from 'node:crypto';
+import type { PoolClient } from 'pg';
 import { query, tx } from './db.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
@@ -32,6 +33,11 @@ function generateOtp(): string {
 
 export async function requestOtp(phoneRaw: string): Promise<{ sent: boolean; devCode?: string }> {
   const phone = normalizePhone(phoneRaw);
+
+  if (!config.otpVerificationEnabled) {
+    logger.info({ phone }, 'OTP_VERIFICATION_ENABLED=false — skipping SMS and OTP storage');
+    return { sent: true };
+  }
 
   const recent = await query<{ created_at: string }>(
     'SELECT created_at FROM otp_codes WHERE phone=$1 ORDER BY created_at DESC LIMIT 1',
@@ -67,11 +73,37 @@ export async function requestOtp(phoneRaw: string): Promise<{ sent: boolean; dev
   return { sent: true, devCode: config.isDev ? code : undefined };
 }
 
+async function findOrCreateUserByPhone(
+  client: PoolClient,
+  phone: string,
+): Promise<{ user: User; isNew: boolean }> {
+  let userRes = await client.query(
+    `SELECT id, phone, name, village, district, language FROM users WHERE phone=$1`,
+    [phone],
+  );
+  let isNew = false;
+  if (userRes.rows.length === 0) {
+    userRes = await client.query(
+      `INSERT INTO users (phone) VALUES ($1)
+       RETURNING id, phone, name, village, district, language`,
+      [phone],
+    );
+    isNew = true;
+  } else {
+    await client.query('UPDATE users SET last_seen = NOW() WHERE id=$1', [userRes.rows[0].id]);
+  }
+  return { user: userRes.rows[0] as User, isNew };
+}
+
 export async function verifyOtp(
   phoneRaw: string,
   code: string,
 ): Promise<{ user: User; isNew: boolean }> {
   const phone = normalizePhone(phoneRaw);
+
+  if (!config.otpVerificationEnabled) {
+    return tx(async (client) => findOrCreateUserByPhone(client, phone));
+  }
 
   return tx(async (client) => {
     const res = await client.query(
@@ -100,22 +132,7 @@ export async function verifyOtp(
 
     await client.query('UPDATE otp_codes SET consumed_at = NOW() WHERE id=$1', [row.id]);
 
-    let userRes = await client.query(
-      `SELECT id, phone, name, village, district, language FROM users WHERE phone=$1`,
-      [phone],
-    );
-    let isNew = false;
-    if (userRes.rows.length === 0) {
-      userRes = await client.query(
-        `INSERT INTO users (phone) VALUES ($1)
-         RETURNING id, phone, name, village, district, language`,
-        [phone],
-      );
-      isNew = true;
-    } else {
-      await client.query('UPDATE users SET last_seen = NOW() WHERE id=$1', [userRes.rows[0].id]);
-    }
-    return { user: userRes.rows[0] as User, isNew };
+    return findOrCreateUserByPhone(client, phone);
   });
 }
 

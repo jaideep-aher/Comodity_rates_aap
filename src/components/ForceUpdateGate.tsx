@@ -13,9 +13,10 @@ import {
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchClientConfig } from '../api/clientConfig';
+import { useClientConfigStore } from '../store/clientConfigStore';
 import { API_URL, IS_REAL } from '../api/config';
 import { colors, font } from '../theme';
-import { isVersionOlderThan } from '../utils/compareVersion';
+import { isVersionNewerThan, isVersionOlderThan } from '../utils/compareVersion';
 
 type Phase = 'checking' | 'ok' | 'blocked';
 
@@ -24,7 +25,8 @@ function currentAppVersion(): string {
 }
 
 function ForceUpdateScreen(props: {
-  minVersion: string;
+  kind: 'tooOld' | 'tooNew';
+  boundaryVersion: string;
   currentVersion: string;
   storeUrl: string;
 }) {
@@ -36,6 +38,16 @@ function ForceUpdateScreen(props: {
   const openStore = () => {
     Linking.openURL(props.storeUrl).catch(() => {});
   };
+
+  const tooOld = props.kind === 'tooOld';
+  const titleMr = tooOld ? 'अॅप अपडेट आवश्यक' : 'ही आवृत्ती सध्या बंद आहे';
+  const titleEn = tooOld ? 'Update required' : 'This version is not supported';
+  const bodyMr = tooOld
+    ? `या आवृत्तीवर (v${props.currentVersion}) अॅप वापरता येणार नाही. कृपया नवीन आवृत्ती (v${props.boundaryVersion}+) इन्स्टॉल करा.`
+    : `ही आवृत्ती (v${props.currentVersion}) सध्या वापरता येणार नाही. कृपया स्टोअरमधून समर्थित आवृत्ती (v${props.boundaryVersion} पर्यंत) वापरा.`;
+  const bodyEn = tooOld
+    ? `This version (v${props.currentVersion}) is no longer supported. Install v${props.boundaryVersion} or newer from the store.`
+    : `This version (v${props.currentVersion}) is not supported right now. Install v${props.boundaryVersion} or an earlier stable build from the store.`;
 
   return (
     <Modal
@@ -50,16 +62,10 @@ function ForceUpdateScreen(props: {
           <Text style={styles.forceEmoji} accessibilityLabel="">
             📲
           </Text>
-          <Text style={styles.forceTitleMr}>अॅप अपडेट आवश्यक</Text>
-          <Text style={styles.forceTitleEn}>Update required</Text>
-          <Text style={styles.forceBody}>
-            या आवृत्तीवर (v{props.currentVersion}) अॅप वापरता येणार नाही. कृपया नवीन आवृत्ती (v
-            {props.minVersion}+) इन्स्टॉल करा.
-          </Text>
-          <Text style={styles.forceBodyEn}>
-            This version (v{props.currentVersion}) is no longer supported. Install v{props.minVersion}{' '}
-            or newer from the store.
-          </Text>
+          <Text style={styles.forceTitleMr}>{titleMr}</Text>
+          <Text style={styles.forceTitleEn}>{titleEn}</Text>
+          <Text style={styles.forceBody}>{bodyMr}</Text>
+          <Text style={styles.forceBodyEn}>{bodyEn}</Text>
           <Pressable
             onPress={openStore}
             style={({ pressed }) => [styles.forceBtn, pressed && styles.forceBtnPressed]}
@@ -90,9 +96,13 @@ function CheckingScreen() {
   );
 }
 
+type BlockState =
+  | { kind: 'tooOld'; boundaryVersion: string; storeUrl: string }
+  | { kind: 'tooNew'; boundaryVersion: string; storeUrl: string };
+
 export function ForceUpdateGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<Phase>(() => (IS_REAL ? 'checking' : 'ok'));
-  const [block, setBlock] = useState<{ min: string; storeUrl: string } | null>(null);
+  const [block, setBlock] = useState<BlockState | null>(null);
 
   useEffect(() => {
     if (!IS_REAL) return;
@@ -107,25 +117,36 @@ export function ForceUpdateGate({ children }: { children: React.ReactNode }) {
         clearTimeout(t);
         if (cancelled) return;
 
-        const min = cfg.minAppVersion?.trim();
+        useClientConfigStore.getState().applyFromResponse(cfg);
+
+        const min = cfg.minAppVersion?.trim() || null;
+        const max = cfg.maxAppVersion?.trim() || null;
         const cur = currentAppVersion();
-        if (!min) {
-          setPhase('ok');
-          return;
-        }
 
         const storeUrl =
           Platform.OS === 'ios'
             ? cfg.iosStoreUrl || cfg.androidStoreUrl
             : cfg.androidStoreUrl || cfg.iosStoreUrl;
 
+        const tooOld = !!min && isVersionOlderThan(cur, min);
+        const tooNew = !!max && isVersionNewerThan(cur, max);
+        if (!tooOld && !tooNew) {
+          setPhase('ok');
+          return;
+        }
+
         if (!storeUrl) {
           setPhase('ok');
           return;
         }
 
-        if (isVersionOlderThan(cur, min)) {
-          setBlock({ min, storeUrl });
+        if (tooOld && min) {
+          setBlock({ kind: 'tooOld', boundaryVersion: min, storeUrl });
+          setPhase('blocked');
+          return;
+        }
+        if (tooNew && max) {
+          setBlock({ kind: 'tooNew', boundaryVersion: max, storeUrl });
           setPhase('blocked');
           return;
         }
@@ -150,7 +171,8 @@ export function ForceUpdateGate({ children }: { children: React.ReactNode }) {
   if (phase === 'blocked' && block) {
     return (
       <ForceUpdateScreen
-        minVersion={block.min}
+        kind={block.kind}
+        boundaryVersion={block.boundaryVersion}
         currentVersion={currentAppVersion()}
         storeUrl={block.storeUrl}
       />

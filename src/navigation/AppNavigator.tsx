@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { colors, font } from '../theme';
@@ -31,6 +31,21 @@ import { IS_REAL } from '../api/config';
 import { useAuth } from '../auth/authStore';
 import { useNotificationsRegistration } from '../hooks/useNotifications';
 import { useDailyAdvisoryNotifications } from '../hooks/useDailyAdvisoryNotifications';
+import { logNavigationScreen } from '../utils/analytics';
+
+function routeParamsForAnalytics(params: object | undefined): Record<string, unknown> {
+  if (!params || typeof params !== 'object') return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined) continue;
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      out[k] = v;
+    } else {
+      out[k] = String(v);
+    }
+  }
+  return out;
+}
 
 type RootStackParamList = {
   OnboardingLang: undefined;
@@ -181,11 +196,26 @@ function Tabs(nav: TabNav) {
 export function AppNavigator() {
   const onboardingDone = useSettings((s) => s.onboardingDone);
   const isAuthed = useAuth((s) => s.isAuthenticated);
+  const navigationRef = useNavigationContainerRef();
+  const lastNavKeyRef = useRef<string>('');
 
   const needsAuth = IS_REAL && !isAuthed;
 
+  const logCurrentRoute = () => {
+    const r = navigationRef.getCurrentRoute();
+    if (!r?.name) return;
+    const key = `${r.name}:${JSON.stringify(r.params ?? {})}`;
+    if (key === lastNavKeyRef.current) return;
+    lastNavKeyRef.current = key;
+    logNavigationScreen(r.name, routeParamsForAnalytics(r.params as object | undefined));
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={logCurrentRoute}
+      onStateChange={logCurrentRoute}
+    >
       <Stack.Navigator
         key={`${onboardingDone}-${needsAuth}`}
         screenOptions={{ headerShown: false }}
@@ -209,6 +239,7 @@ export function AppNavigator() {
                       onCodeSent={(phone, devCode) =>
                         navigation.navigate('OnboardingOtp', { phone, devCode })
                       }
+                      onAuthWithoutOtp={() => navigation.navigate('OnboardingCrops')}
                     />
                   )}
                 </Stack.Screen>
@@ -243,6 +274,9 @@ export function AppNavigator() {
                   onCodeSent={(phone, devCode) =>
                     navigation.navigate('OnboardingOtp', { phone, devCode })
                   }
+                  onAuthWithoutOtp={() => {
+                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+                  }}
                 />
               )}
             </Stack.Screen>

@@ -11,11 +11,14 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFF8E1"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.bajarbhav.app",
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,14 +26,28 @@
         "backgroundColor": "#FFF8E1"
       },
       "icon": "./assets/icon.png",
-      "package": "com.bajarbhav.app",
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+      "package": "com.agro.agrofix",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
     "plugins": [
       [
         "expo-notifications",
         {
           "color": "#0B6E4F"
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/crashlytics",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ],
@@ -44,7 +61,9 @@
         "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
       }
     },
-    "runtimeVersion": { "policy": "sdkVersion" },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
     }

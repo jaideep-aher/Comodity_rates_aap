@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -11,19 +11,29 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, font, radius, spacing } from '../theme';
 import { useDict, useSettings } from '../store/settingsStore';
+import { useClientConfigStore } from '../store/clientConfigStore';
 import { useAuth } from '../auth/authStore';
 
 type Props = {
   onCodeSent: (phone: string, devCode?: string) => void;
+  /** When the server has OTP disabled, called after phone login succeeds without an OTP step. */
+  onAuthWithoutOtp: () => void;
 };
 
-export function OnboardingPhoneScreen({ onCodeSent }: Props) {
+export function OnboardingPhoneScreen({ onCodeSent, onAuthWithoutOtp }: Props) {
   const t = useDict();
   const lang = useSettings((s) => s.language);
   const sendOtp = useAuth((s) => s.sendOtp);
+  const verifyOtp = useAuth((s) => s.verifyOtp);
+  const otpVerificationEnabled = useClientConfigStore((s) => s.otpVerificationEnabled);
+  const configLoaded = useClientConfigStore((s) => s.loaded);
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    void useClientConfigStore.getState().ensureLoaded();
+  }, []);
 
   const submit = async () => {
     Keyboard.dismiss();
@@ -35,14 +45,34 @@ export function OnboardingPhoneScreen({ onCodeSent }: Props) {
     setErr(null);
     setLoading(true);
     try {
-      const res = await sendOtp('+91' + digits);
-      onCodeSent('+91' + digits, res.devCode);
+      await useClientConfigStore.getState().ensureLoaded();
+      const phoneE164 = '+91' + digits;
+      if (!useClientConfigStore.getState().otpVerificationEnabled) {
+        await verifyOtp(phoneE164, '');
+        onAuthWithoutOtp();
+        return;
+      }
+      const res = await sendOtp(phoneE164);
+      onCodeSent(phoneE164, res.devCode);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
       setLoading(false);
     }
   };
+
+  const sub =
+    !configLoaded
+      ? lang === 'mr'
+        ? 'तुमचा १० अंकी मोबाइल क्रमांक टाका.'
+        : 'Enter your 10-digit mobile number.'
+      : otpVerificationEnabled
+        ? lang === 'mr'
+          ? 'आम्ही तुम्हाला OTP पाठवू.'
+          : "We'll send you a one-time code."
+        : lang === 'mr'
+          ? 'फक्त साइन-इनसाठी तुमचा क्रमांक जतन करू; OTP नाही.'
+          : 'We only save your number to sign you in — no OTP.';
 
   return (
     <SafeAreaView style={styles.wrap}>
@@ -51,11 +81,7 @@ export function OnboardingPhoneScreen({ onCodeSent }: Props) {
         <Text style={styles.title}>
           {lang === 'mr' ? 'मोबाइल क्रमांक' : 'Phone number'}
         </Text>
-        <Text style={styles.sub}>
-          {lang === 'mr'
-            ? 'आम्ही तुम्हाला OTP पाठवू.'
-            : "We'll send you a one-time code."}
-        </Text>
+        <Text style={styles.sub}>{sub}</Text>
       </View>
 
       <View style={styles.body}>
