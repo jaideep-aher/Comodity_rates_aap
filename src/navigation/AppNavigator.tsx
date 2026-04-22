@@ -222,10 +222,11 @@ export function AppNavigator() {
               </>
             )}
             <Stack.Screen name="OnboardingCrops">
-              {({ navigation }) => (
+              {() => (
                 <OnboardingCropsScreen
                   onDone={() => {
-                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+                    // `setOnboardingDone(true)` inside the screen flips the
+                    // navigator root; no imperative nav call needed here.
                   }}
                 />
               )}

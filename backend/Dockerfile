@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.json* ./
 RUN npm install
 COPY tsconfig.json ./
 COPY src ./src
@@ -14,6 +14,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/scripts ./scripts
 COPY package.json ./
 EXPOSE 4000
-CMD ["node", "dist/src/index.js"]
+CMD ["sh", "-c", "npm run migrate && node dist/index.js"]

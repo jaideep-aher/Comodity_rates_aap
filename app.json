@@ -2,22 +2,27 @@
   "expo": {
     "name": "BajarBhav",
     "slug": "bajarbhav",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B6E4F"
+      "backgroundColor": "#FFF8E1"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.bajarbhav.app"
+      "bundleIdentifier": "com.bajarbhav.app",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B6E4F"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF8E1"
       },
+      "icon": "./assets/icon.png",
       "package": "com.bajarbhav.app",
       "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
     },

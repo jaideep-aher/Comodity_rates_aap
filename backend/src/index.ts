@@ -76,7 +76,9 @@ async function build() {
       reply.code(401).send({ error: 'unauthorized' });
     }
   });
-  registerPremiumMiddleware(app);
+  // `any`-cast sidesteps Fastify's over-generic type parameters that drift
+  // slightly between @fastify/* plugin versions — runtime is identical.
+  registerPremiumMiddleware(app as any);
 
   app.setErrorHandler((err, _req, reply) => {
     captureException(err);

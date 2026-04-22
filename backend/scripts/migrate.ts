@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { pool } from '../src/db.js';
 import { logger } from '../src/logger.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// This script is executed with `tsx` (never with `tsc` build output),
+// so `import.meta.url` is always available at runtime.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.resolve(__dirname, '../migrations');
 
 async function ensureTable() {
