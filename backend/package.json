@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').writeFileSync('dist/index.js', \\\"require('./src/index.js');\\\")\"",
     "prestart": "node dist/scripts/migrate.js",
     "start": "node dist/src/index.js",
     "typecheck": "tsc --noEmit",
