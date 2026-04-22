@@ -14,7 +14,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/scripts ./scripts
 COPY package.json ./
 EXPOSE 4000
-CMD ["sh", "-c", "npm run migrate && node dist/index.js"]
+# Run compiled migrator (no tsx needed at runtime), then start the API.
+CMD ["sh", "-c", "node dist/scripts/migrate.js && node dist/src/index.js"]

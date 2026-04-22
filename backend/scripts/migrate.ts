@@ -1,14 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { pool } from '../src/db.js';
 import { logger } from '../src/logger.js';
 
-// This script is executed with `tsx` (never with `tsc` build output),
-// so `import.meta.url` is always available at runtime.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const MIGRATIONS_DIR = path.resolve(__dirname, '../migrations');
+// `npm run migrate` sets cwd to the backend package root in both local
+// dev (tsx) and the Docker runner (WORKDIR /app), so migrations live at
+// <cwd>/migrations in either case. Avoid `import.meta.url` — it breaks
+// tsc's CommonJS emit, and avoid `__dirname`-relative paths because
+// tsx and tsc put the file at different depths.
+const MIGRATIONS_DIR = path.resolve(process.cwd(), 'migrations');
 
 async function ensureTable() {
   await pool.query(`
