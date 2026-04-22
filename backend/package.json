@@ -8,10 +8,14 @@
     "build": "tsc",
     "start": "node dist/src/index.js",
     "typecheck": "tsc --noEmit",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed.ts",
-    "scrape": "tsx scripts/scrape-once.ts",
-    "digest": "tsx scripts/send-digest.ts"
+    "migrate": "node dist/scripts/migrate.js",
+    "migrate:dev": "tsx scripts/migrate.ts",
+    "seed": "node dist/scripts/seed.js",
+    "seed:dev": "tsx scripts/seed.ts",
+    "scrape": "node dist/scripts/scrape-once.js",
+    "scrape:dev": "tsx scripts/scrape-once.ts",
+    "digest": "node dist/scripts/send-digest.js",
+    "digest:dev": "tsx scripts/send-digest.ts"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
