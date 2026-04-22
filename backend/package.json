@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "prestart": "node dist/scripts/migrate.js",
     "start": "node dist/src/index.js",
     "typecheck": "tsc --noEmit",
     "migrate": "node dist/scripts/migrate.js",
