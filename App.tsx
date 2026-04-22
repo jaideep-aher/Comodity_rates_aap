@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { ForceUpdateGate } from './src/components/ForceUpdateGate';
 import { colors } from './src/theme';
 import { initAnalytics } from './src/utils/analytics';
 import { usePremium } from './src/store/premiumStore';
@@ -21,7 +22,9 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
         <StatusBar style="dark" backgroundColor={colors.bg} />
-        <AppNavigator />
+        <ForceUpdateGate>
+          <AppNavigator />
+        </ForceUpdateGate>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -15,6 +15,7 @@ import rateLimit from '@fastify/rate-limit';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { healthRoutes } from './routes/health.js';
+import { clientConfigRoutes } from './routes/clientConfig.js';
 import { priceRoutes } from './routes/prices.js';
 import { commodityRoutes } from './routes/commodities.js';
 import { authRoutes } from './routes/auth.js';
@@ -98,6 +99,7 @@ async function build() {
 
   await app.register(healthRoutes);
   await app.register(async (scope) => {
+    await scope.register(clientConfigRoutes);
     await scope.register(priceRoutes);
     await scope.register(commodityRoutes);
     await scope.register(authRoutes);

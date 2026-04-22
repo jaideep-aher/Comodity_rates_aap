@@ -67,4 +67,10 @@ export const config = {
   openaiBase: env('OPENAI_BASE', 'https://api.openai.com/v1'),
   advisoryCron: env('ADVISORY_CRON', '0 6 * * *'),
   advisoryEnabled: env('ADVISORY_ENABLED', 'true') === 'true',
+
+  /** If set (e.g. `0.8.0`), mobile apps below this version must update before use. */
+  minAppVersion: optional('MIN_APP_VERSION'),
+  /** Override Play Store / App Store links shown in the force-update screen. */
+  androidStoreUrl: optional('ANDROID_STORE_URL'),
+  iosStoreUrl: optional('IOS_STORE_URL'),
 };
