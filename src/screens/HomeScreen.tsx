@@ -20,12 +20,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { CommodityRow } from '../components/CommodityRow';
 import { StaleBanner } from '../components/StaleBanner';
 import { WeatherCard } from '../components/WeatherCard';
-import { TipOfDay } from '../components/TipOfDay';
-import { NewsTeaser } from '../components/NewsTeaser';
-import { QuickTools } from '../components/QuickTools';
-import { FarmActionsStrip } from '../components/FarmActionsStrip';
 import { RainRadarStrip } from '../components/RainRadarStrip';
-import { DaysToHarvestCard } from '../components/DaysToHarvestCard';
 import { VillagePickerModal } from '../components/VillagePickerModal';
 import { FarmerHero } from '../components/illustrations/FarmerHero';
 import { Sprout } from '../components/illustrations/Sprout';
@@ -37,14 +32,7 @@ import { useLocation, activeVillage } from '../store/locationStore';
 type Props = {
   onOpenDetail: (slug: string) => void;
   onAddCrops: () => void;
-  onOpenNews: () => void;
-  onOpenSchemes: () => void;
-  onOpenHelpline: () => void;
-  onOpenVideos: () => void;
-  onOpenCropDoctor: () => void;
   onOpenMarkets: () => void;
-  onOpenAskAdvisor: () => void;
-  onOpenFarmDiary: () => void;
 };
 
 function greetingKey(): 'homeGreetingMorning' | 'homeGreetingAfternoon' | 'homeGreetingEvening' {
@@ -66,6 +54,7 @@ export function HomeScreen(p: Props) {
   const [watched, setWatched] = useState<CommodityWithPrice[] | null>(null);
   const [gainers, setGainers] = useState<CommodityWithPrice[]>([]);
   const [losers, setLosers] = useState<CommodityWithPrice[]>([]);
+  const [arrivals, setArrivals] = useState<CommodityWithPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<{ date: string; stale: boolean }>({ date: TODAY_ISO, stale: false });
 
@@ -78,7 +67,8 @@ export function HomeScreen(p: Props) {
         : getToday({ ids: [] }).catch(() => ({ items: [], date: TODAY_ISO, stale: false })),
       getTopMovers('gainers'),
       getTopMovers('losers'),
-    ]).then(([w, g, l]) => {
+      getTopMovers('arrivals'),
+    ]).then(([w, g, l, a]) => {
       if (cancelled) return;
       const order = new Map(watchIds.map((id, i) => [id, i]));
       const sortedW = [...w.items].sort(
@@ -87,6 +77,7 @@ export function HomeScreen(p: Props) {
       setWatched(sortedW);
       setGainers(g);
       setLosers(l);
+      setArrivals(a);
       setMeta({ date: w.date ?? TODAY_ISO, stale: !!w.stale });
       setLoading(false);
     }).catch(() => {
@@ -94,6 +85,7 @@ export function HomeScreen(p: Props) {
       setWatched([]);
       setGainers([]);
       setLosers([]);
+      setArrivals([]);
       setLoading(false);
     });
     return () => {
@@ -109,6 +101,19 @@ export function HomeScreen(p: Props) {
     Share.share({
       message: t.referMessage('https://bajarbhav.app'),
     });
+  };
+
+  const onShareRates = () => {
+    if (!watched || watched.length === 0) return;
+    const dateStr = formatDate(meta.date, lang);
+    const lines = watched
+      .filter((w) => w.today.avg > 0)
+      .map((w) => {
+        const name = lang === 'mr' ? w.name.mr : w.name.en;
+        return `• ${name}: ₹${w.today.avg.toLocaleString('en-IN')}/${t.unitQtl}`;
+      });
+    const msg = `📊 ${dateStr} ${lang === 'mr' ? 'आजचे बाजारभाव' : 'Market Rates'}\n\n${lines.join('\n')}\n\n🌿 BajarBhav ॲप वरून`;
+    Share.share({ message: msg });
   };
 
   return (
@@ -137,15 +142,6 @@ export function HomeScreen(p: Props) {
           <FarmerHero width={140} height={116} />
         </View>
 
-        <Pressable style={styles.askBanner} onPress={p.onOpenAskAdvisor}>
-          <Text style={styles.askEmoji}>🤖</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.askTitle}>{t.askAdvisorHomeTitle}</Text>
-            <Text style={styles.askBody}>{t.askAdvisorHomeSub}</Text>
-          </View>
-          <Text style={styles.chev}>›</Text>
-        </Pressable>
-
         {!IS_REAL && (
           <View style={styles.mockBanner}>
             <Text style={styles.mockText}>📋 {t.profileMockBanner}</Text>
@@ -154,15 +150,9 @@ export function HomeScreen(p: Props) {
 
         {meta.stale && <StaleBanner date={meta.date} />}
 
-        <FarmActionsStrip />
-
         <WeatherCard />
 
         <RainRadarStrip />
-
-        {watched && watched.length > 0 && (
-          <DaysToHarvestCard items={watched} onOpenDetail={p.onOpenDetail} />
-        )}
 
         {/* Watchlist strip */}
         {watchIds.length === 0 ? (
@@ -200,20 +190,13 @@ export function HomeScreen(p: Props) {
           </>
         )}
 
-        <TipOfDay />
-
-        {/* Quick tools */}
-        <SectionHeader title={t.homeQuickTools} />
-        <QuickTools
-          items={[
-            { key: 'schemes', onPress: p.onOpenSchemes },
-            { key: 'helpline', onPress: p.onOpenHelpline },
-            { key: 'calculator', onPress: p.onOpenMarkets },
-            { key: 'calendar', onPress: p.onOpenMarkets },
-            { key: 'videos', onPress: p.onOpenVideos },
-            { key: 'cropDoctor', onPress: p.onOpenCropDoctor },
-          ]}
-        />
+        {watched && watched.length > 0 && (
+          <Pressable style={styles.shareRatesBtn} onPress={onShareRates}>
+            <Text style={styles.shareRatesBtnText}>
+              {lang === 'mr' ? '📤  आजचे भाव शेअर करा' : '📤  Share Today\'s Rates'}
+            </Text>
+          </Pressable>
+        )}
 
         {/* Gainers / losers */}
         {!loading && gainers.length > 0 && (
@@ -238,8 +221,16 @@ export function HomeScreen(p: Props) {
           </>
         )}
 
-        {/* News */}
-        <NewsTeaser onOpenAll={p.onOpenNews} />
+        {!loading && arrivals.length > 0 && (
+          <>
+            <SectionHeader title={lang === 'mr' ? 'आजची आवक' : "Today's Arrivals"} />
+            <View style={styles.card}>
+              {arrivals.slice(0, 5).map((item) => (
+                <CommodityRow key={item.id} item={item} onPress={() => p.onOpenDetail(item.slug)} />
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Refer */}
         <Pressable style={styles.refer} onPress={onShareApp}>
@@ -283,21 +274,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
   },
   villagePillText: { fontSize: font.xs, fontWeight: '700', color: colors.primaryDark },
-  askBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    padding: spacing.md,
-    backgroundColor: '#EEF2FF',
-    borderRadius: radius.lg,
-    gap: spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.indigo,
-  },
-  askEmoji: { fontSize: 28 },
-  askTitle: { fontSize: font.md, fontWeight: '800', color: colors.indigo },
-  askBody: { fontSize: font.sm, color: colors.text, marginTop: 2, lineHeight: 18 },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,6 +343,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadow.card,
+  },
+  shareRatesBtn: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  shareRatesBtnText: {
+    fontSize: font.sm,
+    fontWeight: '700',
+    color: colors.primary,
   },
   refer: {
     flexDirection: 'row',

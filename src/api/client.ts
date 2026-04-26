@@ -1,7 +1,26 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Category, Commodity, CommodityDetail, CommodityWithPrice } from '../types';
 import { buildDetail, buildTodayList, COMMODITIES, TODAY_ISO } from '../data/mockData';
 import { IS_REAL } from './config';
 import { http, HttpError } from './http';
+
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+async function readCache<T>(key: string): Promise<T | null> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return null;
+    const { data, cachedAt } = JSON.parse(raw) as { data: T; cachedAt: number };
+    if (Date.now() - cachedAt > CACHE_TTL_MS) return null;
+    return data;
+  } catch { return null; }
+}
+
+async function writeCache<T>(key: string, data: T): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify({ data, cachedAt: Date.now() }));
+  } catch {}
+}
 
 const MOCK_DELAY_MS = 250;
 const delay = <T>(value: T): Promise<T> =>
@@ -55,14 +74,23 @@ const mockApi = {
 
 const realApi = {
   async getToday(params?: { category?: Category; ids?: number[]; market?: string }): Promise<TodayResponse> {
-    return http<TodayResponse>('/api/prices/today', {
-      auth: false,
-      query: {
-        category: params?.category,
-        market: params?.market,
-        ids: params?.ids && params.ids.length > 0 ? params.ids.join(',') : undefined,
-      },
-    });
+    const cacheKey = 'bajarbhav:cache:today';
+    try {
+      const result = await http<TodayResponse>('/api/prices/today', {
+        auth: false,
+        query: {
+          category: params?.category,
+          market: params?.market,
+          ids: params?.ids && params.ids.length > 0 ? params.ids.join(',') : undefined,
+        },
+      });
+      await writeCache(cacheKey, result);
+      return result;
+    } catch (err) {
+      const cached = await readCache<TodayResponse>(cacheKey);
+      if (cached) return { ...cached, stale: true };
+      throw err;
+    }
   },
 
   async getCommodities(category?: Category): Promise<Commodity[]> {
@@ -91,11 +119,20 @@ const realApi = {
     kind: 'gainers' | 'losers' | 'arrivals',
     market?: string,
   ): Promise<CommodityWithPrice[]> {
-    const res = await http<TodayResponse>('/api/prices/top-movers', {
-      auth: false,
-      query: { kind, market },
-    });
-    return res.items.slice(0, 5);
+    const cacheKey = `bajarbhav:cache:movers:${kind}`;
+    try {
+      const res = await http<TodayResponse>('/api/prices/top-movers', {
+        auth: false,
+        query: { kind, market },
+      });
+      const items = res.items.slice(0, 5);
+      await writeCache(cacheKey, items);
+      return items;
+    } catch (err) {
+      const cached = await readCache<CommodityWithPrice[]>(cacheKey);
+      if (cached) return cached;
+      throw err;
+    }
   },
 };
 

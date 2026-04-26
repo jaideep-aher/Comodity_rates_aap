@@ -10,7 +10,6 @@ import { OnboardingPhoneScreen } from '../screens/OnboardingPhoneScreen';
 import { OnboardingOtpScreen } from '../screens/OnboardingOtpScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { BrowseScreen } from '../screens/BrowseScreen';
-import { AlertsScreen } from '../screens/AlertsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { CommodityDetailScreen } from '../screens/CommodityDetailScreen';
 import { MarketplaceScreen } from '../screens/MarketplaceScreen';
@@ -18,19 +17,10 @@ import { ListingDetailScreen } from '../screens/ListingDetailScreen';
 import { CreateListingScreen } from '../screens/CreateListingScreen';
 import { CreateTransportScreen } from '../screens/CreateTransportScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
-import { LearnScreen } from '../screens/LearnScreen';
-import { NewsScreen } from '../screens/NewsScreen';
-import { SchemesScreen } from '../screens/SchemesScreen';
-import { HelplineScreen } from '../screens/HelplineScreen';
-import { VideosScreen } from '../screens/VideosScreen';
-import { CropDoctorScreen } from '../screens/CropDoctorScreen';
-import { AskAdvisorScreen } from '../screens/AskAdvisorScreen';
-import { FarmDiaryScreen } from '../screens/FarmDiaryScreen';
 import { TabIcon } from '../components/illustrations/TabIcon';
 import { IS_REAL } from '../api/config';
 import { useAuth } from '../auth/authStore';
 import { useNotificationsRegistration } from '../hooks/useNotifications';
-import { useDailyAdvisoryNotifications } from '../hooks/useDailyAdvisoryNotifications';
 import { logNavigationScreen } from '../utils/analytics';
 
 function routeParamsForAnalytics(params: object | undefined): Record<string, unknown> {
@@ -58,13 +48,6 @@ type RootStackParamList = {
   CreateListing: undefined;
   CreateTransport: undefined;
   Premium: undefined;
-  News: undefined;
-  Schemes: undefined;
-  Helpline: undefined;
-  Videos: undefined;
-  CropDoctor: undefined;
-  AskAdvisor: undefined;
-  FarmDiary: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,20 +60,12 @@ type TabNav = {
   onCreateListing: () => void;
   onCreateTransport: () => void;
   onOpenPremium: () => void;
-  onOpenNews: () => void;
-  onOpenSchemes: () => void;
-  onOpenHelpline: () => void;
-  onOpenVideos: () => void;
-  onOpenCropDoctor: () => void;
   onOpenMarkets: () => void;
-  onOpenAskAdvisor: () => void;
-  onOpenFarmDiary: () => void;
 };
 
 function Tabs(nav: TabNav) {
   const t = useDict();
   useNotificationsRegistration();
-  useDailyAdvisoryNotifications();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -118,14 +93,7 @@ function Tabs(nav: TabNav) {
           <HomeScreen
             onOpenDetail={nav.onOpenDetail}
             onAddCrops={nav.onEditCrops}
-            onOpenNews={nav.onOpenNews}
-            onOpenSchemes={nav.onOpenSchemes}
-            onOpenHelpline={nav.onOpenHelpline}
-            onOpenVideos={nav.onOpenVideos}
-            onOpenCropDoctor={nav.onOpenCropDoctor}
             onOpenMarkets={nav.onOpenMarkets}
-            onOpenAskAdvisor={nav.onOpenAskAdvisor}
-            onOpenFarmDiary={nav.onOpenFarmDiary}
           />
         )}
       </Tab.Screen>
@@ -154,27 +122,6 @@ function Tabs(nav: TabNav) {
         )}
       </Tab.Screen>
       <Tab.Screen
-        name="Learn"
-        options={{
-          title: t.tabLearn,
-          tabBarIcon: ({ focused }) => <TabIcon kind="learn" focused={focused} />,
-        }}
-      >
-        {() => (
-          <LearnScreen
-            onOpenNews={nav.onOpenNews}
-            onOpenSchemes={nav.onOpenSchemes}
-            onOpenHelpline={nav.onOpenHelpline}
-            onOpenVideos={nav.onOpenVideos}
-            onOpenCropDoctor={nav.onOpenCropDoctor}
-            onOpenMarkets={nav.onOpenMarkets}
-            onOpenDetail={nav.onOpenDetail}
-            onOpenAskAdvisor={nav.onOpenAskAdvisor}
-            onOpenFarmDiary={nav.onOpenFarmDiary}
-          />
-        )}
-      </Tab.Screen>
-      <Tab.Screen
         name="Profile"
         options={{
           title: t.tabProfile,
@@ -185,7 +132,6 @@ function Tabs(nav: TabNav) {
           <ProfileScreen
             onEditCrops={nav.onEditCrops}
             onOpenPremium={nav.onOpenPremium}
-            onOpenFarmDiary={nav.onOpenFarmDiary}
           />
         )}
       </Tab.Screen>
@@ -304,16 +250,9 @@ export function AppNavigator() {
                   onCreateListing={() => navigation.navigate('CreateListing')}
                   onCreateTransport={() => navigation.navigate('CreateTransport')}
                   onOpenPremium={() => navigation.navigate('Premium')}
-                  onOpenNews={() => navigation.navigate('News')}
-                  onOpenSchemes={() => navigation.navigate('Schemes')}
-                  onOpenHelpline={() => navigation.navigate('Helpline')}
-                  onOpenVideos={() => navigation.navigate('Videos')}
-                  onOpenCropDoctor={() => navigation.navigate('CropDoctor')}
                   onOpenMarkets={() =>
                     navigation.navigate('Tabs' as never, { screen: 'Markets' } as never)
                   }
-                  onOpenAskAdvisor={() => navigation.navigate('AskAdvisor')}
-                  onOpenFarmDiary={() => navigation.navigate('FarmDiary')}
                 />
               )}
             </Stack.Screen>
@@ -352,31 +291,6 @@ export function AppNavigator() {
             </Stack.Screen>
             <Stack.Screen name="Premium" options={{ presentation: 'modal' }}>
               {({ navigation }) => <PremiumScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="News" options={{ presentation: 'card' }}>
-              {({ navigation }) => <NewsScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="Schemes" options={{ presentation: 'card' }}>
-              {({ navigation }) => <SchemesScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="Helpline" options={{ presentation: 'card' }}>
-              {({ navigation }) => <HelplineScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="Videos" options={{ presentation: 'card' }}>
-              {({ navigation }) => <VideosScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="CropDoctor" options={{ presentation: 'card' }}>
-              {({ navigation }) => <CropDoctorScreen onBack={() => navigation.goBack()} />}
-            </Stack.Screen>
-            <Stack.Screen name="AskAdvisor" options={{ presentation: 'card' }}>
-              {({ navigation }) => (
-                <AskAdvisorScreen onBack={() => navigation.goBack()} />
-              )}
-            </Stack.Screen>
-            <Stack.Screen name="FarmDiary" options={{ presentation: 'card' }}>
-              {({ navigation }) => (
-                <FarmDiaryScreen onBack={() => navigation.goBack()} />
-              )}
             </Stack.Screen>
             <Stack.Screen
               name="OnboardingCrops"

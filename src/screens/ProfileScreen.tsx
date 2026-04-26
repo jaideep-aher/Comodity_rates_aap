@@ -14,10 +14,9 @@ import { VillagePickerModal } from '../components/VillagePickerModal';
 type Props = {
   onEditCrops: () => void;
   onOpenPremium: () => void;
-  onOpenFarmDiary?: () => void;
 };
 
-export function ProfileScreen({ onEditCrops, onOpenPremium, onOpenFarmDiary }: Props) {
+export function ProfileScreen({ onEditCrops, onOpenPremium }: Props) {
   const t = useDict();
   const premium = usePremium();
   const isPremium = premium.isActive();
@@ -124,17 +123,6 @@ export function ProfileScreen({ onEditCrops, onOpenPremium, onOpenFarmDiary }: P
           </View>
           <Text style={styles.chev}>›</Text>
         </Pressable>
-
-        {onOpenFarmDiary && (
-          <Pressable style={styles.cropsRow} onPress={onOpenFarmDiary}>
-            <Text style={styles.cropsIcon}>📓</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cropsTitle}>{t.diaryTitle}</Text>
-              <Text style={styles.cropsSub}>{t.diarySub}</Text>
-            </View>
-            <Text style={styles.chev}>›</Text>
-          </Pressable>
-        )}
 
         <Pressable style={styles.cropsRow} onPress={onOpenPremium}>
           <Text style={styles.cropsIcon}>★</Text>

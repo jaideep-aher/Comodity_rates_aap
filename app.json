@@ -2,7 +2,7 @@
   "expo": {
     "name": "BajarBhav",
     "slug": "bajarbhav",
-    "version": "0.7.1",
+    "version": "0.8.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -27,6 +27,7 @@
       },
       "icon": "./assets/icon.png",
       "package": "com.agro.agrofix",
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
@@ -47,6 +48,9 @@
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "targetSdkVersion": 35
           }
         }
       ]
