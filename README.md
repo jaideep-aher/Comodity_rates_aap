@@ -1,4 +1,4 @@
-# BajarBhav (बाजारभाव)
+# Mumbai APMC Bhav (बाजारभाव)
 
 Mumbai APMC market rates + marketplace, built for farmers. Marathi-first, Android-first, offline-first.
 
