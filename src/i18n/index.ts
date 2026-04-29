@@ -293,7 +293,7 @@ type Dict = {
 };
 
 const mr: Dict = {
-  appName: 'बाजारभाव',
+  appName: 'मुंबई APMC भाव',
   tagline: 'मुंबई APMC चा आजचा भाव',
 
   langMr: 'मराठी',
@@ -404,7 +404,7 @@ const mr: Dict = {
   profileMockBanner: 'हे डेमो डेटा आहे. खऱ्या API साठी सेटिंग्स पहा.',
 
   shareMsg: (name, price, date) =>
-    `${name} — ${price}\nदिनांक: ${date}\nस्रोत: बाजारभाव ॲप (APMC मुंबई)`,
+    `${name} — ${price}\nदिनांक: ${date}\nस्रोत: मुंबई APMC भाव ॲप`,
 
   tabTrade: 'व्यापार',
   tradeTitle: 'मंडई',
@@ -516,7 +516,7 @@ const mr: Dict = {
   heroBrag: 'मुंबई, पुणे, नाशिक व सोलापूर APMC — एकाच ॲपमध्ये',
   referCta: 'गाववाल्यांनाही सांगा',
   referMessage: (link) =>
-    `बाजारभाव ॲप वापरून पहा — APMC चे आजचे भाव मराठीत.\n${link}`,
+    `मुंबई APMC भाव ॲप वापरून पहा — आजचे APMC भाव मराठीत.\n${link}`,
 
   actionsTitle: 'आजचे कामे',
   actionSpray: 'फवारणी',
@@ -583,7 +583,7 @@ const mr: Dict = {
 };
 
 const en: Dict = {
-  appName: 'BajarBhav',
+  appName: 'Mumbai APMC Bhav',
   tagline: "Today's Mumbai APMC prices",
 
   langMr: 'मराठी',
@@ -694,7 +694,7 @@ const en: Dict = {
   profileMockBanner: 'Demo data shown. Flip to real mode via app.json > expo.extra.apiMode.',
 
   shareMsg: (name, price, date) =>
-    `${name} — ${price}\nDate: ${date}\nSource: BajarBhav app (APMC Mumbai)`,
+    `${name} — ${price}\nDate: ${date}\nSource: Mumbai APMC Bhav app`,
 
   tabTrade: 'Trade',
   tradeTitle: 'Marketplace',
@@ -806,7 +806,7 @@ const en: Dict = {
   heroBrag: 'Mumbai, Pune, Nashik & Solapur APMC — in one app',
   referCta: 'Tell your neighbours',
   referMessage: (link) =>
-    `Try BajarBhav — today's APMC prices in Marathi.\n${link}`,
+    `Try Mumbai APMC Bhav — today's APMC prices in Marathi.\n${link}`,
 
   actionsTitle: "Today's farm actions",
   actionSpray: 'Spray',

@@ -122,7 +122,7 @@ export function HomeScreen(p: Props) {
           : value.toLocaleString('en-IN');
         return `• ${name}: ₹${formatted}${suffix}`;
       });
-    const msg = `${dateStr} — ${lang === 'mr' ? 'आजचे बाजारभाव' : 'Market Rates'}\n\n${lines.join('\n')}\n\nMandiBhav ${lang === 'mr' ? 'ॲप' : 'app'}`;
+    const msg = `${dateStr} — ${lang === 'mr' ? 'आजचे बाजारभाव' : 'Market Rates'}\n\n${lines.join('\n')}\n\n${t.appName} ${lang === 'mr' ? 'ॲप' : 'app'}`;
     Share.share({ message: msg });
   };
 

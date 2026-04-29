@@ -31,7 +31,7 @@ export function useNotificationsRegistration() {
 
         if (Platform.OS === 'android') {
           await Notifications.setNotificationChannelAsync('default', {
-            name: 'BajarBhav',
+            name: 'Mumbai APMC Bhav',
             importance: Notifications.AndroidImportance.HIGH,
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#0B6E4F',

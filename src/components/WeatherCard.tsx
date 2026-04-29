@@ -112,7 +112,7 @@ export function WeatherCard({ onPress }: Props) {
         `🌤️ ${t.homeWeatherToday} — ${today.label[lang]}`,
         `${today.tempMaxC}° / ${today.tempMinC}°C · ${t.priceMin}: 💧 ${today.rainChance}%`,
         today.advice[lang],
-        '— बाजारभाव ॲप',
+        lang === 'mr' ? `— ${t.appName} ॲप` : `— ${t.appName} app`,
       ].join('\n'),
     });
   };
