@@ -106,45 +106,59 @@ export function HomeScreen(p: Props) {
   const onShareRates = () => {
     if (!watched || watched.length === 0) return;
     const dateStr = formatDate(meta.date, lang);
+    const unit = useSettings.getState().unit;
     const lines = watched
       .filter((w) => w.today.avg > 0)
       .map((w) => {
         const name = lang === 'mr' ? w.name.mr : w.name.en;
-        return `• ${name}: ₹${w.today.avg.toLocaleString('en-IN')}/${t.unitQtl}`;
+        // Convert qtl→kg when user is on per-kg unit so the shared message
+        // matches what they see in-app.
+        const value = unit === 'kg' ? w.today.avg / 100 : w.today.avg;
+        const suffix = unit === 'kg'
+          ? (lang === 'mr' ? '/किलो' : '/kg')
+          : (lang === 'mr' ? '/क्विं' : '/qtl');
+        const formatted = unit === 'kg'
+          ? value.toFixed(value < 100 ? 1 : 0)
+          : value.toLocaleString('en-IN');
+        return `• ${name}: ₹${formatted}${suffix}`;
       });
-    const msg = `📊 ${dateStr} ${lang === 'mr' ? 'आजचे बाजारभाव' : 'Market Rates'}\n\n${lines.join('\n')}\n\n🌿 BajarBhav ॲप वरून`;
+    const msg = `${dateStr} — ${lang === 'mr' ? 'आजचे बाजारभाव' : 'Market Rates'}\n\n${lines.join('\n')}\n\nMandiBhav ${lang === 'mr' ? 'ॲप' : 'app'}`;
     Share.share({ message: msg });
   };
 
   return (
     <SafeAreaView style={styles.wrap} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Hero */}
+        {/* Hero — single column on the left, decorative illustration on the
+            right kept small enough not to fight the headline for attention. */}
         <View style={styles.hero}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greet}>{greet}{displayName}</Text>
+            <Text style={styles.greet} numberOfLines={2}>{greet}{displayName}</Text>
             <Text style={styles.date}>{formatDate(meta.date, lang)}</Text>
-            <Pressable
-              onPress={() => setVillagePickerOpen(true)}
-              style={styles.villagePill}
-            >
-              <Text style={styles.villagePillText}>
-                📍  {village.name[lang]}
-              </Text>
-            </Pressable>
-            <View style={[styles.badge, marketOpen ? styles.badgeOpen : styles.badgeClosed]}>
-              <View style={[styles.dot, marketOpen ? styles.dotOpen : styles.dotClosed]} />
-              <Text style={styles.badgeText}>
-                {marketOpen ? t.homeMarketOpen : t.homeMarketClosed}
-              </Text>
+            <View style={styles.heroChips}>
+              <Pressable
+                onPress={() => setVillagePickerOpen(true)}
+                style={styles.villagePill}
+                hitSlop={6}
+              >
+                <Text style={styles.villagePillText}>
+                  {village.name[lang]}
+                </Text>
+              </Pressable>
+              <View style={[styles.badge, marketOpen ? styles.badgeOpen : styles.badgeClosed]}>
+                <View style={[styles.dot, marketOpen ? styles.dotOpen : styles.dotClosed]} />
+                <Text style={styles.badgeText}>
+                  {marketOpen ? t.homeMarketOpen : t.homeMarketClosed}
+                </Text>
+              </View>
             </View>
           </View>
-          <FarmerHero width={140} height={116} />
+          <FarmerHero width={108} height={92} />
         </View>
 
         {!IS_REAL && (
           <View style={styles.mockBanner}>
-            <Text style={styles.mockText}>📋 {t.profileMockBanner}</Text>
+            <Text style={styles.mockText}>{t.profileMockBanner}</Text>
           </View>
         )}
 
@@ -193,7 +207,7 @@ export function HomeScreen(p: Props) {
         {watched && watched.length > 0 && (
           <Pressable style={styles.shareRatesBtn} onPress={onShareRates}>
             <Text style={styles.shareRatesBtnText}>
-              {lang === 'mr' ? '📤  आजचे भाव शेअर करा' : '📤  Share Today\'s Rates'}
+              {lang === 'mr' ? 'WhatsApp वर भाव पाठवा' : "Share Today's Rates on WhatsApp"}
             </Text>
           </Pressable>
         )}
@@ -257,17 +271,21 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xxl },
   hero: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     gap: spacing.md,
   },
-  greet: { fontSize: font.xxl, fontWeight: '800', color: colors.text },
-  date: { fontSize: font.sm, color: colors.textMuted, marginTop: 2 },
-  villagePill: {
-    alignSelf: 'flex-start',
+  greet: { fontSize: font.xxl, fontWeight: '800', color: colors.text, lineHeight: font.xxl * 1.15 },
+  date: { fontSize: font.sm, color: colors.textMuted, marginTop: 4 },
+  heroChips: {
+    flexDirection: 'row',
+    gap: spacing.xs,
     marginTop: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  villagePill: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.pill,
@@ -281,7 +299,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.pill,
     gap: 6,
-    marginTop: spacing.sm,
     alignSelf: 'flex-start',
   },
   badgeOpen: { backgroundColor: colors.upBg },
@@ -346,17 +363,18 @@ const styles = StyleSheet.create({
   },
   shareRatesBtn: {
     marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
+    ...shadow.pop,
   },
   shareRatesBtnText: {
-    fontSize: font.sm,
+    fontSize: font.md,
     fontWeight: '700',
-    color: colors.primary,
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   refer: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import { getWeather } from '../data/weather';
 import { TODAY_ISO } from '../data/mockData';
 import { localiseNumber } from '../utils/format';
 import { useLiveWeather } from '../hooks/useLiveWeather';
+import { useLocation } from '../store/locationStore';
 
 // Shows the next 12 hours of rain probability as a row of emoji + filled bars.
 // Meant to answer: "will it rain, and if so, when?" in one glance.
@@ -13,6 +14,10 @@ export function RainRadarStrip() {
   const t = useDict();
   const nLang = useNumeralLang();
   const live = useLiveWeather();
+  const permission = useLocation((s) => s.permission);
+  // Hide rain radar entirely until the user grants location — we don't want
+  // to show fake mock data masquerading as their forecast.
+  if (permission !== 'granted') return null;
   const days = live.days.length > 0 ? live.days : getWeather(TODAY_ISO);
   if (days.length === 0) return null;
   const pct = days[0].hourlyRainPct;

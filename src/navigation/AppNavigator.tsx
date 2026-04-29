@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
+import { Platform } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font } from '../theme';
 import { useSettings, useDict } from '../store/settingsStore';
 import { OnboardingLangScreen } from '../screens/OnboardingLangScreen';
 import { OnboardingCropsScreen } from '../screens/OnboardingCropsScreen';
-import { OnboardingPhoneScreen } from '../screens/OnboardingPhoneScreen';
-import { OnboardingOtpScreen } from '../screens/OnboardingOtpScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { BrowseScreen } from '../screens/BrowseScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -18,8 +18,6 @@ import { CreateListingScreen } from '../screens/CreateListingScreen';
 import { CreateTransportScreen } from '../screens/CreateTransportScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
 import { TabIcon } from '../components/illustrations/TabIcon';
-import { IS_REAL } from '../api/config';
-import { useAuth } from '../auth/authStore';
 import { useNotificationsRegistration } from '../hooks/useNotifications';
 import { logNavigationScreen } from '../utils/analytics';
 
@@ -39,8 +37,6 @@ function routeParamsForAnalytics(params: object | undefined): Record<string, unk
 
 type RootStackParamList = {
   OnboardingLang: undefined;
-  OnboardingPhone: undefined;
-  OnboardingOtp: { phone: string; devCode?: string };
   OnboardingCrops: undefined;
   Tabs: undefined;
   Detail: { slug: string };
@@ -65,20 +61,31 @@ type TabNav = {
 
 function Tabs(nav: TabNav) {
   const t = useDict();
+  const insets = useSafeAreaInsets();
   useNotificationsRegistration();
+  // Android gesture-nav phones report `insets.bottom` for the home/back gesture
+  // strip. Without adding it to the tab bar, "Profile" / "Trade" labels disappear
+  // under the system handle. iOS uses it for the home indicator.
+  const bottomInset = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 8)
+    : insets.bottom;
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: font.xs, fontWeight: '600' },
+        tabBarLabelStyle: {
+          fontSize: font.xs,
+          fontWeight: '600',
+          marginBottom: 2,
+        },
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          paddingTop: 6,
-          paddingBottom: 6,
-          height: 64,
+          paddingTop: 8,
+          paddingBottom: bottomInset + 6,
+          height: 60 + bottomInset,
         },
       }}
     >
@@ -141,11 +148,8 @@ function Tabs(nav: TabNav) {
 
 export function AppNavigator() {
   const onboardingDone = useSettings((s) => s.onboardingDone);
-  const isAuthed = useAuth((s) => s.isAuthenticated);
   const navigationRef = useNavigationContainerRef();
   const lastNavKeyRef = useRef<string>('');
-
-  const needsAuth = IS_REAL && !isAuthed;
 
   const logCurrentRoute = () => {
     const r = navigationRef.getCurrentRoute();
@@ -163,7 +167,7 @@ export function AppNavigator() {
       onStateChange={logCurrentRoute}
     >
       <Stack.Navigator
-        key={`${onboardingDone}-${needsAuth}`}
+        key={`${onboardingDone}`}
         screenOptions={{ headerShown: false }}
       >
         {!onboardingDone ? (
@@ -171,70 +175,14 @@ export function AppNavigator() {
             <Stack.Screen name="OnboardingLang">
               {({ navigation }) => (
                 <OnboardingLangScreen
-                  onNext={() =>
-                    navigation.navigate(IS_REAL ? 'OnboardingPhone' : 'OnboardingCrops')
-                  }
+                  onNext={() => navigation.navigate('OnboardingCrops')}
                 />
               )}
             </Stack.Screen>
-            {IS_REAL && (
-              <>
-                <Stack.Screen name="OnboardingPhone">
-                  {({ navigation }) => (
-                    <OnboardingPhoneScreen
-                      onCodeSent={(phone, devCode) =>
-                        navigation.navigate('OnboardingOtp', { phone, devCode })
-                      }
-                      onAuthWithoutOtp={() => navigation.navigate('OnboardingCrops')}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen name="OnboardingOtp">
-                  {({ route, navigation }) => (
-                    <OnboardingOtpScreen
-                      phone={route.params.phone}
-                      devCode={route.params.devCode}
-                      onBack={() => navigation.goBack()}
-                      onVerified={() => navigation.navigate('OnboardingCrops')}
-                    />
-                  )}
-                </Stack.Screen>
-              </>
-            )}
             <Stack.Screen name="OnboardingCrops">
               {() => (
                 <OnboardingCropsScreen
-                  onDone={() => {
-                    // `setOnboardingDone(true)` inside the screen flips the
-                    // navigator root; no imperative nav call needed here.
-                  }}
-                />
-              )}
-            </Stack.Screen>
-          </>
-        ) : needsAuth ? (
-          <>
-            <Stack.Screen name="OnboardingPhone">
-              {({ navigation }) => (
-                <OnboardingPhoneScreen
-                  onCodeSent={(phone, devCode) =>
-                    navigation.navigate('OnboardingOtp', { phone, devCode })
-                  }
-                  onAuthWithoutOtp={() => {
-                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
-                  }}
-                />
-              )}
-            </Stack.Screen>
-            <Stack.Screen name="OnboardingOtp">
-              {({ route, navigation }) => (
-                <OnboardingOtpScreen
-                  phone={route.params.phone}
-                  devCode={route.params.devCode}
-                  onBack={() => navigation.goBack()}
-                  onVerified={() => {
-                    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
-                  }}
+                  onDone={() => {}}
                 />
               )}
             </Stack.Screen>

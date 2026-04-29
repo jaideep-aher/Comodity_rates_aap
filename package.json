@@ -1,6 +1,6 @@
 {
   "name": "bajarbhav",
-  "version": "0.7.1",
+  "version": "4.0.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

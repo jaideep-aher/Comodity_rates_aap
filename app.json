@@ -2,7 +2,7 @@
   "expo": {
     "name": "BajarBhav",
     "slug": "bajarbhav",
-    "version": "0.8.0",
+    "version": "0.10.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",

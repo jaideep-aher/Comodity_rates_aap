@@ -5,7 +5,6 @@ import { colors, font, radius, shadow, spacing } from '../theme';
 import { useSettings, useDict } from '../store/settingsStore';
 import { useWatchlist } from '../store/watchlistStore';
 import { usePremium } from '../store/premiumStore';
-import { useAuth } from '../auth/authStore';
 import { IS_REAL } from '../api/config';
 import type { Language } from '../types';
 import { useLocation, activeVillage } from '../store/locationStore';
@@ -20,7 +19,6 @@ export function ProfileScreen({ onEditCrops, onOpenPremium }: Props) {
   const t = useDict();
   const premium = usePremium();
   const isPremium = premium.isActive();
-  const logout = useAuth((s) => s.logout);
   const language = useSettings((s) => s.language);
   const setLanguage = useSettings((s) => s.setLanguage);
   const unit = useSettings((s) => s.unit);
@@ -153,17 +151,6 @@ export function ProfileScreen({ onEditCrops, onOpenPremium }: Props) {
           <Text style={styles.chev}>›</Text>
         </Pressable>
 
-        {IS_REAL && (
-          <Pressable
-            style={[styles.cropsRow, { marginBottom: spacing.lg }]}
-            onPress={logout}
-          >
-            <Text style={styles.cropsIcon}>⎋</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cropsTitle}>{t.profileLogout}</Text>
-            </View>
-          </Pressable>
-        )}
 
         {!IS_REAL && (
           <View style={styles.mockNotice}>

@@ -8,16 +8,24 @@ import { syncProfile } from '../api/client';
 // doesn't re-pick their village daily. GPS coords override village lat/lng
 // when available (fresher signal), but the village is the anchor for
 // human-readable location + pincode.
+// Permission lifecycle. "unknown" = we've never asked the OS. "prompt" = we
+// asked once, OS deferred. "granted"/"denied" = OS terminal state. We persist
+// this so we don't re-prompt on every cold start (Android's permission UX
+// punishes apps that nag).
+export type LocationPermission = 'unknown' | 'prompt' | 'granted' | 'denied';
+
 type State = {
   villageId: string;
   // Most recent GPS fix. Null until the farmer grants permission once.
   gpsLat: number | null;
   gpsLng: number | null;
   gpsUpdatedAt: number | null;
+  permission: LocationPermission;
 
   setVillage: (id: string) => void;
   setGps: (lat: number, lng: number) => void;
   clearGps: () => void;
+  setPermission: (p: LocationPermission) => void;
 };
 
 export const useLocation = create<State>()(
@@ -27,6 +35,8 @@ export const useLocation = create<State>()(
       gpsLat: null,
       gpsLng: null,
       gpsUpdatedAt: null,
+      permission: 'unknown',
+      setPermission: (permission) => set({ permission }),
       setVillage: (id) => {
         set({ villageId: id });
         const v = findVillage(id);

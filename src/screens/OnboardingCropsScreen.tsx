@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font, radius, spacing } from '../theme';
 import { useSettings, useDict } from '../store/settingsStore';
 import { useWatchlist } from '../store/watchlistStore';
@@ -24,6 +25,13 @@ export function OnboardingCropsScreen({ onDone }: Props) {
   const setOnboardingDone = useSettings((s) => s.setOnboardingDone);
   const ids = useWatchlist((s) => s.ids);
   const toggle = useWatchlist((s) => s.toggle);
+  const insets = useSafeAreaInsets();
+  // Same Android-gesture-nav fix as the tab bar — without this, the footer's
+  // CTA sits under the system gesture strip and taps land in the OS, not the
+  // app, so "Skip"/"Continue" silently fail.
+  const footerInset = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 12)
+    : insets.bottom;
 
   const [cat, setCat] = useState<Category>('veg');
   const [query, setQuery] = useState('');
@@ -94,14 +102,22 @@ export function OnboardingCropsScreen({ onDone }: Props) {
         />
       </View>
 
-      <View style={styles.footer}>
-        <Pressable onPress={finish}>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: footerInset + spacing.md },
+        ]}
+      >
+        <Pressable onPress={finish} hitSlop={8}>
           <Text style={styles.skip}>{t.skip}</Text>
         </Pressable>
         <Pressable
           onPress={finish}
-          style={[styles.cta, selectedCount === 0 && { opacity: 0.5 }]}
-          disabled={selectedCount === 0}
+          // Always tappable — even with 0 selected we let them skip-via-CTA
+          // rather than silently failing. The label still shows "(0)" so they
+          // know what they're doing.
+          style={styles.cta}
+          hitSlop={8}
         >
           <Text style={styles.ctaText}>{t.onboardingCropsContinueN(selectedCount)}</Text>
         </Pressable>
@@ -165,7 +181,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
+    // paddingBottom is set dynamically based on safe-area insets so the
+    // CTA never sits under Android's gesture nav strip.
     backgroundColor: colors.bg,
     borderTopWidth: 1,
     borderTopColor: colors.border,

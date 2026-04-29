@@ -12,6 +12,7 @@ import { evaluateAllActions, heatStressFor } from '../utils/advisor';
 import { TtsButton } from './TtsButton';
 import { useLiveWeather } from '../hooks/useLiveWeather';
 import { useLocation, activeVillage } from '../store/locationStore';
+import { requestLocation } from '../utils/location';
 
 type Props = { onPress?: () => void };
 
@@ -26,7 +27,53 @@ export function WeatherCard({ onPress }: Props) {
   const nLang = useNumeralLang();
   const watchIds = useWatchlist((s) => s.ids);
   const villageId = useLocation((s) => s.villageId);
+  const permission = useLocation((s) => s.permission);
+  const setPermission = useLocation((s) => s.setPermission);
+  const setGps = useLocation((s) => s.setGps);
   const live = useLiveWeather();
+
+  // If we don't have location yet, show a compact CTA instead of fake weather
+  // for a default village. Tapping the tile prompts the OS permission dialog.
+  // After "denied" we keep the tile but compress it further.
+  if (permission !== 'granted') {
+    const onEnable = async () => {
+      const res = await requestLocation();
+      if (res.status === 'granted' && res.coords) {
+        setGps(res.coords.lat, res.coords.lng);
+        setPermission('granted');
+      } else if (res.status === 'denied') {
+        setPermission('denied');
+      }
+    };
+    const isDenied = permission === 'denied';
+    return (
+      <Pressable
+        style={[styles.wrap, styles.gateWrap, isDenied && styles.gateWrapDenied]}
+        onPress={onEnable}
+      >
+        <View style={styles.gateRow}>
+          <View style={styles.gateIcon}>
+            <Text style={styles.gateIconText}>📍</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.gateTitle}>
+              {lang === 'mr' ? 'हवामान पाहण्यासाठी' : 'See your local weather'}
+            </Text>
+            <Text style={styles.gateBody}>
+              {isDenied
+                ? lang === 'mr'
+                  ? 'सेटिंग्जमधून लोकेशन परवानगी द्या'
+                  : 'Enable location in Settings to see live weather'
+                : lang === 'mr'
+                  ? 'टॅप करून लोकेशन परवानगी द्या'
+                  : 'Tap to share your location'}
+            </Text>
+          </View>
+          <Text style={styles.gateChev}>›</Text>
+        </View>
+      </Pressable>
+    );
+  }
 
   const days = live.days.length > 0 ? live.days : getWeather(TODAY_ISO);
   if (days.length === 0) return null;
@@ -277,4 +324,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   dayTagText: { fontSize: 10, fontWeight: '800' },
+
+  // Permission-gate tile (shown instead of full weather card until location
+  // is granted). Compact, single-row, tappable.
+  gateWrap: {
+    paddingVertical: spacing.md,
+    backgroundColor: colors.primarySoft,
+  },
+  gateWrapDenied: {
+    backgroundColor: colors.flatBg,
+    opacity: 0.85,
+  },
+  gateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  gateIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gateIconText: { fontSize: 22 },
+  gateTitle: { fontSize: font.md, fontWeight: '700', color: colors.text },
+  gateBody: { fontSize: font.sm, color: colors.textMuted, marginTop: 2 },
+  gateChev: { fontSize: 28, color: colors.primary, fontWeight: '300' },
 });

@@ -28,23 +28,41 @@ export function isLocationAvailable(): boolean {
 
 export type GpsCoords = { lat: number; lng: number };
 
+export type RequestResult = {
+  status: 'granted' | 'denied' | 'unavailable';
+  coords: GpsCoords | null;
+};
+
+// Asks for location permission and (if granted) returns a fresh fix.
+// Use this for proactive prompts at onboarding / first-launch.
+export async function requestLocation(): Promise<RequestResult> {
+  const mod = load();
+  if (!mod) return { status: 'unavailable', coords: null };
+  try {
+    const perm = await mod.requestForegroundPermissionsAsync();
+    if (perm.status !== 'granted') return { status: 'denied', coords: null };
+    const last = await mod.getLastKnownPositionAsync();
+    if (last?.coords) {
+      return {
+        status: 'granted',
+        coords: { lat: last.coords.latitude, lng: last.coords.longitude },
+      };
+    }
+    const fresh = await mod.getCurrentPositionAsync();
+    return {
+      status: 'granted',
+      coords: { lat: fresh.coords.latitude, lng: fresh.coords.longitude },
+    };
+  } catch {
+    return { status: 'denied', coords: null };
+  }
+}
+
 // Returns last-known coords if present, else requests a fresh fix. Null if
 // permission is denied, the module isn't bundled, or the OS is slow.
 export async function getCurrentCoords(): Promise<GpsCoords | null> {
-  const mod = load();
-  if (!mod) return null;
-  try {
-    const perm = await mod.requestForegroundPermissionsAsync();
-    if (perm.status !== 'granted') return null;
-    const last = await mod.getLastKnownPositionAsync();
-    if (last?.coords) {
-      return { lat: last.coords.latitude, lng: last.coords.longitude };
-    }
-    const fresh = await mod.getCurrentPositionAsync();
-    return { lat: fresh.coords.latitude, lng: fresh.coords.longitude };
-  } catch {
-    return null;
-  }
+  const res = await requestLocation();
+  return res.coords;
 }
 
 export async function reversePincode(coords: GpsCoords): Promise<string | null> {

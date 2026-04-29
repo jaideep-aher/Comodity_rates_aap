@@ -3,6 +3,9 @@ node_modules/
 dist/
 npm-debug.*
 *.jks
+
+# Play upload keystore password (local only; keystore is *.jks above)
+signing/.upload-keystore-password
 *.p8
 *.p12
 *.key

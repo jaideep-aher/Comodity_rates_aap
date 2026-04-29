@@ -26,7 +26,9 @@ export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
       language: 'mr',
-      unit: 'qtl',
+      // Default to per-kg — that's how a small farmer thinks. Power users can
+      // toggle to /quintal in Profile.
+      unit: 'kg',
       numerals: 'auto',
       onboardingDone: false,
       name: '',
